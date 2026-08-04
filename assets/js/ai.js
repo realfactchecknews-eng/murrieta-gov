@@ -214,7 +214,9 @@ AI.bind = function(){
       });
       if (!res.ok){
         const t = await res.text().catch(()=> '');
-        throw new Error(`Worker вернул ${res.status}. ${t.slice(0,180)}`);
+        let msg = t.slice(0,220);
+        try { msg = JSON.parse(t).error || msg; } catch {}
+        throw new Error(msg);
       }
 
       /* потоковый ответ */
