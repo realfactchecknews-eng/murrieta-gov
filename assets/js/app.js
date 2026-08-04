@@ -147,18 +147,6 @@ async function viewHome(){
           <p>${items.slice(0,4).map(d=>esc(d.title)).join(' · ')}${items.length>4?' и др.':''}</p>
         </a>`;}).join('')}
     </div>
-  </section>
-
-  <section class="sec">
-    <div class="sec__head rv"><div>
-      <h2 class="h2">Сверено с памяткой из Discord</h2>
-      <p>Популярная памятка полезна, но её поддержка прекращена 02.07.2025. Вот где она расходится с действующей редакцией.</p>
-    </div><a class="btn btn--ghost" href="#/diff">Все расхождения ${arrow}</a></div>
-    <div class="notice rv">
-      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8.5v5M12 17h.01M10.3 3.9L2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
-      <div>Самое важное: ожидание <b>руководства</b> задержанного госслужащего — <b>60 минут</b>, а не 15.
-      15 минут — это только ожидание <b>прокурора</b> (ПК гл. II ст. 4 ч. 1).</div>
-    </div>
   </section>`;
 }
 
@@ -326,8 +314,7 @@ async function viewCards(){
   <section class="sec view">
     <div class="sec__head"><div><h2 class="h2">Шпаргалки гос. сотрудника</h2>
       <p>Выжимка из Процессуального кодекса, УАК и правил — то, что нужно под рукой прямо во время задержания.
-         Каждая карточка ссылается на первоисточник.</p></div>
-      <a class="btn btn--ghost" href="#/diff">Расхождения с памяткой ${arrow}</a></div>
+         Каждая карточка ссылается на первоисточник.</p></div></div>
     <div class="qcards">${q.cards.map(card).join('')}</div>
   </section>`;
 }
@@ -392,27 +379,6 @@ async function viewGuides(params){
       </div>
       ${cur.blocks.map(guideBlock).join('')}
     </article>
-  </section>`;
-}
-
-/* ============================================================
-   РАСХОЖДЕНИЯ
-   ============================================================ */
-async function viewDiff(){
-  const q = await loadQuick(); const d = q.discrepancies;
-  const sev = {high:'Важно',medium:'Средне',low:'Мелочь'};
-  return `
-  <section class="sec view">
-    <div class="crumb"><a href="#/">Главная</a> / Расхождения</div>
-    <div class="sec__head"><div><h2 class="h2">${esc(d.title)}</h2><p>${esc(d.intro)}</p></div></div>
-    ${d.items.map(i=>`
-      <div class="diff diff--${i.severity} rv">
-        <b>${esc(i.topic)} <span class="tag ${i.severity==='high'?'tag--u':i.severity==='medium'?'tag--warn':''}">${sev[i.severity]}</span></b>
-        <dl>
-          <dt>В памятке</dt><dd>${esc(i.memo)}</dd>
-          <dt>По форуму</dt><dd class="ok">${esc(i.official)}</dd>
-        </dl>
-      </div>`).join('')}
   </section>`;
 }
 
@@ -493,7 +459,6 @@ const ROUTES = [
   [/^\/dk$/,                'dk',    viewDk],
   [/^\/cards$/,             'cards', viewCards],
   [/^\/guides$/,            'guides',viewGuides],
-  [/^\/diff$/,              'cards', viewDiff],
   [/^\/docs$/,              'docs',  viewDocs],
   [/^\/doc\/([\w-]+)$/,     'docs',  (p,m)=>viewDoc(m[1])],
   [/^\/ai$/,                'ai',    ()=>window.AI.view()],
