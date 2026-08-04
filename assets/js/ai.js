@@ -30,6 +30,43 @@ function toks(s){
     .map(w => /^\d/.test(w) ? w : w.slice(0,6));
 }
 
+/* Кодексы и законы почти никогда не называют себя аббревиатурой внутри
+   собственного текста («ПК» не встречается в самом Процессуальном кодексе),
+   поэтому обычный BM25 по токенам эту связь не видит вообще. Здесь —
+   явный словарь: аббревиатура/сленг → id документа, который при
+   упоминании принудительно поднимается в выдаче. */
+const ABBR_DOCS = {
+  'пк':['pk'], 'процессуальный':['pk'], 'процессуальныйкодекс':['pk'],
+  'уак':['uak'], 'ук':['uak'], 'ак':['uak'], 'уголовка':['uak'], 'админка':['uak'],
+  'дк':['dk'], 'дорожный':['dk'], 'пдд':['dk'],
+  'ск':['sudebnyy'], 'судебныйкодекс':['sudebnyy'],
+  'тк':['trudovoy'],
+  'эк':['eticheskiy'], 'этика':['eticheskiy'],
+  'зот':['z-zot'],
+  'конституция':['konstituciya'], 'конст':['konstituciya'],
+  'лспд':['z-lspd','u-lspd'], 'lspd':['z-lspd','u-lspd'],
+  'лссд':['z-lssd','u-lssd','u-lssd-otd'], 'lssd':['z-lssd','u-lssd','u-lssd-otd'],
+  'фиб':['z-fib','u-fib'], 'fib':['z-fib','u-fib'],
+  'гов':['z-pravitelstvo','u-gov','u-gov-lic'], 'gov':['z-pravitelstvo','u-gov','u-gov-lic'],
+  'емс':['z-ems','u-ems','u-ems-disc','u-ems-lic','u-ems-med'], 'ems':['z-ems','u-ems','u-ems-disc','u-ems-lic','u-ems-med'],
+  'санг':['z-army','u-ng','u-ng-karaul'], 'sang':['z-army','u-ng','u-ng-karaul'], 'нг':['z-army','u-ng','u-ng-karaul'],
+  'сасра':['z-saspa','u-saspa','u-saspa-doktr','u-saspa-rasp'], 'saspa':['z-saspa','u-saspa','u-saspa-doktr','u-saspa-rasp'],
+  'усс':['z-usss'], 'usss':['z-usss'],
+  'усмс':['z-usms'], 'usms':['z-usms'],
+  'прецедент':['s-precedenty'], 'прецеденты':['s-precedenty'], 'толкование':['s-precedenty'], 'толкования':['s-precedenty'],
+  'адвокатура':['z-advokat'], 'адвокатский':['z-advokat'],
+  'прокуратура':['z-prokuratura'],
+  'юрисдикция':['z-yurisdikciya'],
+  'оружие':['z-oruzhie'], 'мвоз':['z-oruzhie'],
+  'розыск':['z-rozysk'],
+};
+function abbrevDocs(query){
+  const words = query.toLowerCase().match(/[a-zа-яё]+/gi) || [];
+  const hit = new Set();
+  for (const w of words) if (ABBR_DOCS[w]) ABBR_DOCS[w].forEach(d=>hit.add(d));
+  return hit;
+}
+
 async function ensureIndex(){
   if (AI.chunks) return;
   const r = await fetch('data/chunks.json');
@@ -54,6 +91,7 @@ function retrieve(query, k=10){
   const ql = query.toLowerCase();
   const q = toks(query);
   const nums = query.match(/\b\d+\.\d+(?:\.\d+)?\b/g) || [];
+  const abbrDocs = abbrevDocs(query);
   /* Вопрос «что мне за это будет» должен вытягивать кодекс и памятки, а не
      профильный устав той фракции, чьё название случайно попало в вопрос. */
   const wantsNorm = /стать|наказан|штраф|залог|нарушен|хулиган|можно ли|могу ли|обязан|задерж|арест|срок/.test(ql);
@@ -67,10 +105,16 @@ function retrieve(query, k=10){
     }
     for (const n of nums) if (c.text.includes(n)) s += 14;
     if (/задерж|арест|миранд|обыск|допрос|сил/.test(ql) && c.doc==='pk') s += 1.6;
+    /* Явное упоминание аббревиатуры («ПК», «УАК», «ЗОТ», «FIB»...) — сильный
+       сигнал: утраивает уже найденную по теме релевантность внутри этого
+       документа. Умножение, а не плюс — иначе абревиатура одна вытащит
+       случайные, не относящиеся к вопросу фрагменты того же документа
+       выше по-настоящему релевантных находок из других источников. */
+    if (abbrDocs.has(c.doc)) s = s>0 ? s*3 : s+3;
     if (wantsNorm){
-      if (c.doc === 'uak') s *= 1.7;                 // сам кодекс с санкциями
-      if (c.doc.startsWith('guide-')) s *= 1.5;      // сведённые выводы
-      if (/^u-|^s-/.test(c.doc)) s *= 0.7;           // уставы и практика — фон
+      if (c.doc === 'uak' || c.doc === 'pk' || c.doc === 'dk') s *= 1.7;  // базовые кодексы с санкциями
+      else if (c.doc.startsWith('guide-')) s *= 1.5;                     // сведённые выводы
+      else if (/^u-|^s-/.test(c.doc)) s *= 0.7;                          // уставы и практика — фон, а не старт
     }
     return {c, s};
   }).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
