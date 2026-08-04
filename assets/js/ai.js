@@ -50,9 +50,13 @@ async function ensureIndex(){
 }
 
 /* BM25 + буст за точный номер статьи */
-function retrieve(query, k=8){
+function retrieve(query, k=10){
+  const ql = query.toLowerCase();
   const q = toks(query);
   const nums = query.match(/\b\d+\.\d+(?:\.\d+)?\b/g) || [];
+  /* Вопрос «что мне за это будет» должен вытягивать кодекс и памятки, а не
+     профильный устав той фракции, чьё название случайно попало в вопрос. */
+  const wantsNorm = /стать|наказан|штраф|залог|нарушен|хулиган|можно ли|могу ли|обязан|задерж|арест|срок/.test(ql);
   const k1=1.5, b=0.72;
   const scored = AI.chunks.map(c=>{
     let s = 0;
@@ -62,24 +66,54 @@ function retrieve(query, k=8){
       s += idf * (f*(k1+1)) / (f + k1*(1 - b + b*c._len/AI.avgLen));
     }
     for (const n of nums) if (c.text.includes(n)) s += 14;
-    if (/задерж|арест|миранд|обыск|допрос|сил/.test(query.toLowerCase()) && c.doc==='pk') s += 1.6;
+    if (/задерж|арест|миранд|обыск|допрос|сил/.test(ql) && c.doc==='pk') s += 1.6;
+    if (wantsNorm){
+      if (c.doc === 'uak') s *= 1.7;                 // сам кодекс с санкциями
+      if (c.doc.startsWith('guide-')) s *= 1.5;      // сведённые выводы
+      if (/^u-|^s-/.test(c.doc)) s *= 0.7;           // уставы и практика — фон
+    }
     return {c, s};
   }).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
 
-  /* не более 3 фрагментов из одного документа — чтобы контекст был разнообразнее */
+  /* Лимит на документ: иначе один устав занимает половину контекста и
+     вытесняет норму, по которой задан вопрос. Памяткам лимит выше — у них
+     несколько коротких блоков по одной теме бывают релевантны сразу
+     (перечень 12.6.1, перечень 12.6 и оговорка про закрытость списка). */
   const per = {}, out = [];
   for (const {c} of scored){
+    const cap = c.doc.startsWith('guide-') ? 4 : 2;
     per[c.doc] = (per[c.doc]||0);
-    if (per[c.doc] >= 3) continue;
+    if (per[c.doc] >= cap) continue;
     per[c.doc]++; out.push(c);
     if (out.length >= k) break;
   }
   return out;
 }
 
+/* Модель склонна путать санкции соседних статей (например, приписать 12.6.1
+   арест от 13.4). Поэтому точные цифры подаём отдельным блоком прямо из
+   articles.json — это первоисточник разбора, а не пересказ. */
+async function sanctionCard(query, chunks){
+  if (!AI.articles){
+    try { AI.articles = await (await fetch('data/articles.json')).json(); }
+    catch { return ''; }
+  }
+  const nums = new Set();
+  const scan = s => (s.match(/\b\d{1,2}\.\d{1,2}(?:\.\d{1,2})?\b/g) || []).forEach(n => nums.add(n));
+  scan(query);
+  chunks.forEach(c => scan(c.text));
+  const hits = AI.articles.filter(a => nums.has(a.num)).slice(0, 14);
+  if (!hits.length) return '';
+  return '\n\n=== ТОЧНЫЕ САНКЦИИ УАК (числа бери ТОЛЬКО отсюда) ===\n' +
+    hits.map(a => `${a.num} [${a.type}] ${a.title}\n   САНКЦИЯ: ${a.sanction}` +
+      (a.bail ? `\n   ЗАЛОГ: ${a.bail.toLocaleString('ru-RU')}$` : '\n   ЗАЛОГ: не предусмотрен')
+    ).join('\n');
+}
+
 /* выносим наружу — удобно проверять качество поиска из консоли */
 AI.retrieve = retrieve;
 AI.ensureIndex = ensureIndex;
+AI.sanctionCard = sanctionCard;
 
 /* ------------------------------------------------ markdown ---- */
 function md(t){
@@ -205,8 +239,10 @@ AI.bind = function(){
     try{
       await ensureIndex();
       const ctx = retrieve(text, 8);
-      const context = ctx.map((c,i)=>
-        `[${i+1}] ${c.docTitle}${c.heading?' — '+c.heading:''}\n${c.text}`).join('\n\n---\n\n');
+      /* без номеров [1],[2] — иначе модель тащит их в ответ как «источники» */
+      const context = ctx.map(c=>
+        `—— ${c.docTitle}${c.heading?' · '+c.heading:''} ——\n${c.text}`).join('\n\n')
+        + await sanctionCard(text, ctx);
 
       const res = await fetch(workerUrl()+'/chat', {
         method:'POST', headers:{'Content-Type':'application/json'},
