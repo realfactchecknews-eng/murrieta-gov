@@ -425,6 +425,8 @@ async function viewForms(params){
       <input class="field-i" type="text" data-k="${f.key}" placeholder="${esc(f.placeholder||'')}" value="${val}"></label>`;
   };
 
+  const ownerGroup = data.groups.find(g=>g.forms.includes(form.id));
+
   const groupNav = data.groups.map(g=>`
     <div class="fg-group">
       <b>${esc(g.name)}</b>
@@ -446,9 +448,24 @@ async function viewForms(params){
       <aside class="formgen__nav">${groupNav}</aside>
       <div class="formgen__body">
         <div class="fg-title">
-          <h3 class="h3">${esc(form.title)}</h3>
+          <div class="fg-title__row">
+            <h3 class="h3">${esc(form.title)}</h3>
+            ${ownerGroup?.submitUrl?`<a class="btn btn--main" style="padding:9px 15px;font-size:13px" href="${esc(ownerGroup.submitUrl)}" target="_blank" rel="noopener">Подать на форуме ${arrow}</a>`:''}
+          </div>
           ${form.note?`<p class="fg-note">${esc(form.note)}</p>`:''}
         </div>
+
+        <div class="fg-ai">
+          <label class="fg"><span>Опишите ситуацию своими словами — ИИ определит нужную статью и составит текст</span>
+            <textarea class="field-i" id="fgAiInput" rows="4" placeholder="Что произошло, когда и где, кто участвовал — пишите как есть, без ссылок на статьи"></textarea>
+          </label>
+          <div class="fg-ai__row">
+            <button class="btn btn--main" id="fgAiGo" style="padding:9px 16px;font-size:13px">Составить через ИИ</button>
+            <span class="fg-ai__hint" id="fgAiHint">Проверит формулировку и вставит готовый текст в поля ниже — их можно будет поправить вручную.</span>
+          </div>
+          <div class="fg-ai__analysis" id="fgAiAnalysis" hidden></div>
+        </div>
+
         <div class="fg-fields" id="fgFields">${form.fields.map(fieldHtml).join('')}</div>
       </div>
       <div class="formgen__preview">
@@ -464,11 +481,45 @@ async function viewForms(params){
 
 function bindForms(data, form){
   const preview = $('#fgPreview');
+  const rerender = () => { preview.textContent = renderFormTemplate(form, formState.values); };
   $$('.field-i').forEach(el=>{
     el.addEventListener('input', ()=>{
       formState.values[el.dataset.k] = el.value;
-      preview.textContent = renderFormTemplate(form, formState.values);
+      rerender();
     });
+  });
+
+  const aiGo = $('#fgAiGo'), aiInput = $('#fgAiInput'), aiHint = $('#fgAiHint'), aiAnalysis = $('#fgAiAnalysis');
+  aiGo?.addEventListener('click', async ()=>{
+    const desc = aiInput.value.trim();
+    if (!desc){ toast('Опишите ситуацию — поле пустое'); return; }
+    aiGo.disabled = true; aiGo.textContent = 'Составляю…';
+    aiHint.textContent = 'Ищу подходящую статью и формулирую текст — обычно 10–20 секунд.';
+    try{
+      const r = await window.AI.draftPetition(desc, form.title);
+      if (r.analysis){
+        aiAnalysis.hidden = false;
+        aiAnalysis.innerHTML = `<b>Анализ ИИ</b><p>${esc(r.analysis)}</p>`;
+      }
+      if (r.description && form.aiFields?.description){
+        const key = form.aiFields.description;
+        formState.values[key] = r.description;
+        const el = document.querySelector(`.field-i[data-k="${key}"]`);
+        if (el) el.value = r.description;
+      }
+      if (r.request && form.aiFields?.request){
+        const key = form.aiFields.request;
+        formState.values[key] = r.request;
+        const el = document.querySelector(`.field-i[data-k="${key}"]`);
+        if (el) el.value = r.request;
+      }
+      rerender();
+      aiHint.textContent = 'Готово — проверьте текст в полях ниже и подправьте, если нужно.';
+    }catch(err){
+      aiHint.textContent = 'Ошибка: ' + err.message;
+    }finally{
+      aiGo.disabled = false; aiGo.textContent = 'Составить через ИИ';
+    }
   });
   $('#fgCopy').addEventListener('click', async ()=>{
     try{ await navigator.clipboard.writeText(preview.textContent); toast('Скопировано'); }

@@ -411,7 +411,17 @@ kbd{
 .fg-group .chip{text-align:left;font-size:12.5px;padding:8px 11px}
 .formgen__body{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px}
 .fg-title{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.fg-title__row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .fg-note{margin:8px 0 0;font-size:13px;color:var(--tx-2);line-height:1.55}
+.fg-ai{
+  background:linear-gradient(135deg,var(--acc-soft),transparent);border:1px solid rgba(255,123,46,.22);
+  border-radius:14px;padding:16px 18px;margin-bottom:20px;
+}
+.fg-ai__row{display:flex;align-items:center;gap:13px;margin-top:11px;flex-wrap:wrap}
+.fg-ai__hint{font-size:12.5px;color:var(--tx-2)}
+.fg-ai__analysis{margin-top:13px;padding-top:12px;border-top:1px dashed rgba(255,123,46,.25)}
+.fg-ai__analysis b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+.fg-ai__analysis p{margin:0;font-size:13.3px;line-height:1.58;color:var(--tx-2)}
 .fg-fields{display:flex;flex-direction:column;gap:13px}
 .fg label.fg,.fg-fields label.fg{display:flex;flex-direction:column;gap:6px}
 .fg-fields label.fg span{font-size:12.5px;font-weight:600;color:var(--tx-2)}

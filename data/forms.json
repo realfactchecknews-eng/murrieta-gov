@@ -11,7 +11,8 @@
         "vs-kassaciya",
         "vs-tolkovanie",
         "vs-hodataystvo"
-      ]
+      ],
+      "submitUrl": "https://forum.gta5rp.com/forums/verkhovnyi-sud.1743/"
     },
     {
       "id": "fs",
@@ -19,14 +20,16 @@
       "forms": [
         "fs-isk",
         "fs-hodataystvo"
-      ]
+      ],
+      "submitUrl": "https://forum.gta5rp.com/forums/federal-nyi-sud.1745/"
     },
     {
       "id": "prok",
       "name": "Прокуратура",
       "forms": [
         "prok-obraschenie"
-      ]
+      ],
+      "submitUrl": "https://forum.gta5rp.com/forums/zhaloby-v-prokuraturu.1764/"
     }
   ],
   "forms": [
@@ -153,7 +156,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nДанные ответчика:\nИмя фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nИдентификационный знак: {{otvetchik_znak}}\n\nИСКОВОЕ ЗАЯВЛЕНИЕ\n\n{{opisanie}}\n\nМАТЕРИАЛЫ ЗАЯВЛЕНИЯ\n\n{{materialy}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\nНа основании вышеизложенного, прошу суд:\n{{prosba}}\n\nДата подачи искового заявления: {{data}}\nПодпись истца или его представителя: ________"
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nДанные ответчика:\nИмя фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nИдентификационный знак: {{otvetchik_znak}}\n\nИСКОВОЕ ЗАЯВЛЕНИЕ\n\n{{opisanie}}\n\nМАТЕРИАЛЫ ЗАЯВЛЕНИЯ\n\n{{materialy}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\nНа основании вышеизложенного, прошу суд:\n{{prosba}}\n\nДата подачи искового заявления: {{data}}\nПодпись истца или его представителя: ________",
+      "aiFields": {
+        "description": "opisanie",
+        "request": "prosba"
+      }
     },
     {
       "id": "vs-apellyaciya",
@@ -260,7 +267,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nОбжалуемый акт:\nСудья: {{sudya}}\nНаименование обжалуемого акта Федерального суда: {{akt_nazvanie}}\nДата публикации обжалуемого акта Федерального суда: {{akt_data}}\n\nАПЕЛЛЯЦИОННАЯ ЖАЛОБА\n\n{{osnovaniya}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи апелляционной жалобы: {{data}}\nПодпись истца или его представителя: ________"
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nОбжалуемый акт:\nСудья: {{sudya}}\nНаименование обжалуемого акта Федерального суда: {{akt_nazvanie}}\nДата публикации обжалуемого акта Федерального суда: {{akt_data}}\n\nАПЕЛЛЯЦИОННАЯ ЖАЛОБА\n\n{{osnovaniya}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи апелляционной жалобы: {{data}}\nПодпись истца или его представителя: ________",
+      "aiFields": {
+        "description": "osnovaniya",
+        "request": "prosba"
+      }
     },
     {
       "id": "vs-kassaciya",
@@ -367,7 +378,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nОбжалуемый акт:\nСудья: {{sudya}}\nНаименование обжалуемого судебного акта: {{akt_nazvanie}}\nДата публикации обжалуемого акта: {{akt_data}}\n\nКАССАЦИОННАЯ ЖАЛОБА\n\n{{osnovaniya}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи кассационной жалобы: {{data}}\nПодпись истца или его представителя: ________"
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nОбжалуемый акт:\nСудья: {{sudya}}\nНаименование обжалуемого судебного акта: {{akt_nazvanie}}\nДата публикации обжалуемого акта: {{akt_data}}\n\nКАССАЦИОННАЯ ЖАЛОБА\n\n{{osnovaniya}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи кассационной жалобы: {{data}}\nПодпись истца или его представителя: ________",
+      "aiFields": {
+        "description": "osnovaniya",
+        "request": "prosba"
+      }
     },
     {
       "id": "vs-tolkovanie",
@@ -473,7 +488,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n\nДанные ответчика:\nИмя Фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nНаименование государственного органа, издавшего акт: {{gosorgan}}\nНаименование обжалуемого акта, дата его публикации: {{akt_nazvanie}}\n\nЗакон или иной НПА: {{npa}}\n\n{{tip}}\n\n{{opisanie}}\n\nДОКАЗАТЕЛЬНАЯ БАЗА\n\n{{dokazatelstva}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи обращения: {{data}}\nПодпись истца или его представителя: ________"
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n\nДанные ответчика:\nИмя Фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nНаименование государственного органа, издавшего акт: {{gosorgan}}\nНаименование обжалуемого акта, дата его публикации: {{akt_nazvanie}}\n\nЗакон или иной НПА: {{npa}}\n\n{{tip}}\n\n{{opisanie}}\n\nДОКАЗАТЕЛЬНАЯ БАЗА\n\n{{dokazatelstva}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи обращения: {{data}}\nПодпись истца или его представителя: ________",
+      "aiFields": {
+        "description": "opisanie",
+        "request": "prosba"
+      }
     },
     {
       "id": "vs-hodataystvo",
@@ -534,7 +553,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные заявителя:\nИмя Фамилия: {{imya}}\nНомер паспорта (ID-card): {{pasport}}\nКопия паспорта заявителя: {{pasport_kopiya}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nХОДАТАЙСТВО\n\nВаша честь, {{tekst}}\n\nС уважением {{podpis_imya}}\n\nДата подачи ходатайства: {{data}}\nПодпись заявителя: ________"
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные заявителя:\nИмя Фамилия: {{imya}}\nНомер паспорта (ID-card): {{pasport}}\nКопия паспорта заявителя: {{pasport_kopiya}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nХОДАТАЙСТВО\n\nВаша честь, {{tekst}}\n\nС уважением {{podpis_imya}}\n\nДата подачи ходатайства: {{data}}\nПодпись заявителя: ________",
+      "aiFields": {
+        "description": "tekst",
+        "request": null
+      }
     },
     {
       "id": "fs-isk",
@@ -652,7 +675,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В Федеральный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nДанные ответчика:\nИмя фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nИдентификационный знак: {{otvetchik_znak}}\n\nИСКОВОЕ ЗАЯВЛЕНИЕ\n\n{{opisanie}}\n\nМАТЕРИАЛЫ ЗАЯВЛЕНИЯ\n\n{{materialy}}\n\nПРОСЬБА К ФЕДЕРАЛЬНОМУ СУДУ\n\nНа основании вышеизложенного, прошу суд:\n{{prosba}}\n\nДата подачи искового заявления: {{data}}\nПодпись истца или его представителя: ________"
+      "template": "В Федеральный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nДанные ответчика:\nИмя фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nИдентификационный знак: {{otvetchik_znak}}\n\nИСКОВОЕ ЗАЯВЛЕНИЕ\n\n{{opisanie}}\n\nМАТЕРИАЛЫ ЗАЯВЛЕНИЯ\n\n{{materialy}}\n\nПРОСЬБА К ФЕДЕРАЛЬНОМУ СУДУ\n\nНа основании вышеизложенного, прошу суд:\n{{prosba}}\n\nДата подачи искового заявления: {{data}}\nПодпись истца или его представителя: ________",
+      "aiFields": {
+        "description": "opisanie",
+        "request": "prosba"
+      }
     },
     {
       "id": "fs-hodataystvo",
@@ -712,7 +739,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В Федеральный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные заявителя:\nИмя Фамилия: {{imya}}\nНомер паспорта (ID-card): {{pasport}}\nКопия паспорта заявителя: {{pasport_kopiya}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nХОДАТАЙСТВО\n\nВаша честь, {{tekst}}\n\nС уважением {{podpis_imya}}\n\nДата подачи ходатайства: {{data}}\nПодпись заявителя: ________"
+      "template": "В Федеральный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные заявителя:\nИмя Фамилия: {{imya}}\nНомер паспорта (ID-card): {{pasport}}\nКопия паспорта заявителя: {{pasport_kopiya}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nХОДАТАЙСТВО\n\nВаша честь, {{tekst}}\n\nС уважением {{podpis_imya}}\n\nДата подачи ходатайства: {{data}}\nПодпись заявителя: ________",
+      "aiFields": {
+        "description": "tekst",
+        "request": null
+      }
     },
     {
       "id": "prok-obraschenie",
@@ -788,7 +819,11 @@
           "placeholder": "дд.мм.гггг"
         }
       ],
-      "template": "В прокуратуру штата Сан-Андреас\nОт Гражданина Штата Сан-Андреас\nИмя Фамилия: {{imya}}\nНомер паспорта: {{pasport}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nДанные проверяемого лица:\nИмя Фамилия: {{proverka_imya}}\nМесто работы: {{proverka_rabota}}\nДолжность: {{proverka_dolzhnost}}\nИдентификационный знак: {{proverka_znak}}\n\nОБРАЩЕНИЕ В ПРОКУРАТУРУ\n\n{{opisanie}}\n\nПРИЛОЖЕНИЯ К ОБРАЩЕНИЮ\n\n{{materialy}}\n\nПРОШЕНИЯ К ПРОКУРАТУРЕ\n\nНа основании изложенного прошу органы прокуратуры:\n{{prosba}}\n\nДата подачи обращения: {{data}}\nПодпись заявителя: ________"
+      "template": "В прокуратуру штата Сан-Андреас\nОт Гражданина Штата Сан-Андреас\nИмя Фамилия: {{imya}}\nНомер паспорта: {{pasport}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nДанные проверяемого лица:\nИмя Фамилия: {{proverka_imya}}\nМесто работы: {{proverka_rabota}}\nДолжность: {{proverka_dolzhnost}}\nИдентификационный знак: {{proverka_znak}}\n\nОБРАЩЕНИЕ В ПРОКУРАТУРУ\n\n{{opisanie}}\n\nПРИЛОЖЕНИЯ К ОБРАЩЕНИЮ\n\n{{materialy}}\n\nПРОШЕНИЯ К ПРОКУРАТУРЕ\n\nНа основании изложенного прошу органы прокуратуры:\n{{prosba}}\n\nДата подачи обращения: {{data}}\nПодпись заявителя: ________",
+      "aiFields": {
+        "description": "opisanie",
+        "request": "prosba"
+      }
     }
   ],
   "rejectionGrounds": {

@@ -168,9 +168,12 @@ def parse_doc(path):
         if is_heading(s):
             if cur["paras"] or cur["heading"]:
                 sections.append(cur)
-            lvl = 1 if re.match(r"^(Глава|Раздел|Общая часть|Особенная часть)", s, re.I) else 2
+            # «Комментарий законодателя» — самостоятельный блок в конце УАК,
+            # который иначе наследует «Глава 18» (последнюю главу перед ним)
+            # как родителя, и модель путает номер статьи с номером главы.
+            lvl = 1 if re.match(r"^(Глава|Раздел|Общая часть|Особенная часть|Комментарий законодателя)", s, re.I) else 2
             if lvl == 1:
-                parent = s
+                parent = "" if re.match(r"^Комментарий законодателя", s, re.I) else s
             cur = {"heading": s, "level": lvl, "paras": [], "parent": "" if lvl == 1 else parent}
             if post_no > 1:
                 cur["amendment"] = True

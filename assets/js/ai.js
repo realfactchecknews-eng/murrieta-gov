@@ -23,11 +23,15 @@ const escA = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','
 /* ------------------------------------------------ токенизация - */
 const STOP = new Set(['и','в','во','не','что','он','на','я','с','со','как','а','то','все','она','так','его','но','да','ты','к','у','же','вы','за','бы','по','только','ее','мне','было','вот','от','меня','о','из','ему','теперь','когда','даже','ну','вдруг','ли','если','уже','или','ни','быть','был','него','до','вас','нибудь','опять','уж','вам','ведь','там','потом','себя','ничего','ей','может','они','тут','где','есть','надо','ней','для','мы','тебя','их','чем','была','сам','чтоб','без','будто','чего','раз','тоже','себе','под','будет','ж','тогда','кто','этот','того','потому','этого','какой','совсем','ним','здесь','этом','один','почти','мой','тем','чтобы','нее','кажется','сейчас','были','куда','зачем','всех','никогда','можно','при','наконец','два','об','другой','хоть','после','над','больше','тот','через','эти','нас','про','всего','них','какая','много','разве','три','эту','моя','впрочем','хорошо','свою','этой','перед','иногда','лучше','чуть','том','нельзя','такой','им','более','всегда','конечно','всю','между']);
 
-/* грубая нормализация: обрезаем русские окончания до 6 символов */
+/* Грубая нормализация: обрезаем русские окончания до 4 символов.
+   Было 6 — но «секса» (5 букв, не обрезается) и «сексуальных»→slice(0,6)=
+   «сексуа» расходятся в последней букве и не считаются одним словом,
+   хотя корень общий. 4 символа реже ловят такие ложные расхождения
+   (короткие частые корни всё равно получают низкий вес через IDF). */
 function toks(s){
   return (s.toLowerCase().match(/[a-zа-яё0-9]+(?:\.[0-9]+)*/gi)||[])
     .filter(w => w.length>1 && !STOP.has(w))
-    .map(w => /^\d/.test(w) ? w : w.slice(0,6));
+    .map(w => /^\d/.test(w) ? w : w.slice(0,4));
 }
 
 /* Кодексы и законы почти никогда не называют себя аббревиатурой внутри
@@ -87,14 +91,24 @@ async function ensureIndex(){
 }
 
 /* BM25 + буст за точный номер статьи */
-function retrieve(query, k=10){
+function retrieve(query, k=10, opts={}){
   const ql = query.toLowerCase();
   const q = toks(query);
   const nums = query.match(/\b\d+\.\d+(?:\.\d+)?\b/g) || [];
   const abbrDocs = abbrevDocs(query);
+  /* Буст за буквальное совпадение значимых слов (5+ букв) в самом тексте
+     фрагмента — обходит огрубление 4-символьного стемминга для редких,
+     но важных существительных («сексуальный», «хулиганство»), которые
+     иначе теряются на фоне общих слов запроса. */
+  const litWords = [...new Set((query.toLowerCase().match(/[а-яёa-z]{5,}/g)||[])
+    .filter(w=>!STOP.has(w)))];
   /* Вопрос «что мне за это будет» должен вытягивать кодекс и памятки, а не
-     профильный устав той фракции, чьё название случайно попало в вопрос. */
-  const wantsNorm = /стать|наказан|штраф|залог|нарушен|хулиган|можно ли|могу ли|обязан|задерж|арест|срок/.test(ql);
+     профильный устав той фракции, чьё название случайно попало в вопрос.
+     Свободный рассказ о происшествии (составление заявления) редко содержит
+     эти слова-триггеры вообще — вызывающий код может форсировать буст
+     через opts.forceCore, иначе УАК не получит приоритет и потонет в
+     профильных законах структур, которые просто упомянуты в тексте. */
+  const wantsNorm = opts.forceCore || /стать|наказан|штраф|залог|нарушен|хулиган|можно ли|могу ли|обязан|задерж|арест|срок/.test(ql);
   const k1=1.5, b=0.72;
   const scored = AI.chunks.map(c=>{
     let s = 0;
@@ -104,6 +118,7 @@ function retrieve(query, k=10){
       s += idf * (f*(k1+1)) / (f + k1*(1 - b + b*c._len/AI.avgLen));
     }
     for (const n of nums) if (c.text.includes(n)) s += 14;
+    for (const w of litWords) if (c.text.toLowerCase().includes(w)) s += 6;
     if (/задерж|арест|миранд|обыск|допрос|сил/.test(ql) && c.doc==='pk') s += 1.6;
     /* Явное упоминание аббревиатуры («ПК», «УАК», «ЗОТ», «FIB»...) — сильный
        сигнал: утраивает уже найденную по теме релевантность внутри этого
@@ -125,7 +140,12 @@ function retrieve(query, k=10){
      (перечень 12.6.1, перечень 12.6 и оговорка про закрытость списка). */
   const per = {}, out = [];
   for (const {c} of scored){
-    const cap = c.doc.startsWith('guide-') ? 4 : 2;
+    let cap = c.doc.startsWith('guide-') ? (opts.forceCore ? 6 : 4) : 2;
+    /* При составлении заявления нужно шире охватить УАК: релевантная статья
+       и комментарий к ней часто лежат в разных чанках, а два места на
+       документ иногда занимают более общие совпадения раньше нужного. */
+    if (opts.forceCore && c.doc === 'uak') cap = 10;
+    else if (opts.forceCore && c.doc === 'pk') cap = 4;
     per[c.doc] = (per[c.doc]||0);
     if (per[c.doc] >= cap) continue;
     per[c.doc]++; out.push(c);
@@ -158,6 +178,88 @@ async function sanctionCard(query, chunks){
 AI.retrieve = retrieve;
 AI.ensureIndex = ensureIndex;
 AI.sanctionCard = sanctionCard;
+
+/* Составление содержания заявления: та же схема поиска контекста,
+   что и в чате, но отдельный режим на Worker (DRAFT_SYSTEM) и разбор
+   ответа на три секции для автозаполнения полей формы. */
+/* Некоторые темы слишком чувствительны, чтобы надеяться на удачу обычного
+   текстового поиска: перепутать статьи о хулиганстве и о половых
+   преступлениях — не техническая мелочь, а прямая ошибка в содержании
+   заявления. Для таких тем нужный фрагмент подкладывается в контекст
+   гарантированно, а не по результату ранжирования. */
+const FORCED_TOPICS = [
+  { test: /секс|половой|изнасил|мужеложств|лесбиянств/i,
+    match: c => c.doc === 'uak' && /имитирующих сексуальные акты|Изнасилование, мужеложство/i.test(c.text) },
+];
+function forcedChunks(query){
+  const out = [];
+  const byId = new Map(AI.chunks.map(c=>[c.id,c]));
+  for (const t of FORCED_TOPICS){
+    if (!t.test.test(query)) continue;
+    for (const c of AI.chunks){
+      if (!t.match(c)) continue;
+      /* Нарезка на 1400 символов иногда режет прямо между номером статьи
+         («4. Комментарий к статье 12.6...») и текстом самого пункта —
+         тогда в найденном куске нет номера вообще. Подхватываем
+         предыдущий кусок того же документа, чтобы номер не терялся. */
+      const [doc, idx] = c.id.split('#');
+      for (const back of [2, 1]){
+        const prev = byId.get(doc+'#'+(Number(idx)-back));
+        if (prev && !out.includes(prev)) out.push(prev);
+      }
+      if (!out.includes(c)) out.push(c);
+    }
+  }
+  return out;
+}
+
+AI.draftPetition = async function(description, formTitle){
+  if (!isConfigured()) throw new Error('ИИ не настроен — нажмите «Настроить» и укажите адрес Worker.');
+  await ensureIndex();
+  const forced = forcedChunks(description);
+  const rest = retrieve(description, 16, {forceCore:true}).filter(c=>!forced.includes(c));
+  const ctx = [...forced, ...rest].slice(0, 18);
+  const context = ctx.map(c => c.doc.startsWith('guide-')
+    ? `—— внутренний разбор, источники см. в тексте ——\n${c.text}`
+    : `—— ${c.docTitle}${c.heading?' · '+c.heading:''} ——\n${c.text}`
+  ).join('\n\n') + await sanctionCard(description, ctx);
+
+  const res = await fetch(workerUrl()+'/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ question:description, context, mode:'draft', formTitle })
+  });
+  if (!res.ok){
+    const t = await res.text().catch(()=> '');
+    let msg = t.slice(0,220); try{ msg = JSON.parse(t).error || msg; }catch{}
+    throw new Error(msg);
+  }
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let acc = '', buf = '';
+  while (true){
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, {stream:true});
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines){
+      const s = line.trim();
+      if (!s.startsWith('data:')) continue;
+      const p = s.slice(5).trim();
+      if (p === '[DONE]') continue;
+      try{ const j = JSON.parse(p); const d = j.choices?.[0]?.delta?.content; if (d) acc += d; }catch{}
+    }
+  }
+  const pick = (label, stop) => {
+    const re = new RegExp('###\\s*'+label+'\\s*\\n([\\s\\S]*?)(?='+stop+'|$)', 'i');
+    const m = acc.match(re);
+    return m ? m[1].trim() : '';
+  };
+  return {
+    analysis: pick('АНАЛИЗ', '###\\s*ОПИСАНИЕ'),
+    description: pick('ОПИСАНИЕ СИТУАЦИИ', '###\\s*ПРОСЬБА'),
+    request: pick('ПРОСЬБА', '$'),
+    raw: acc,
+  };
+};
 
 /* ------------------------------------------------ markdown ---- */
 function md(t){
