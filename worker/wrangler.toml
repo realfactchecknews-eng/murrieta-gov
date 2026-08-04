@@ -14,7 +14,7 @@ MAX_TOKENS = "900"
 
 # Кто может обращаться к Worker. Укажите адрес своего сайта.
 # Для локальной проверки добавьте http://localhost:8080
-ALLOWED_ORIGINS = "https://ВАШ-НИК.github.io,http://localhost:8080"
+ALLOWED_ORIGINS = "https://realfactchecknews-eng.github.io,http://localhost:8080"
 
 # Показывается в статистике OpenRouter
-SITE_URL = "https://ВАШ-НИК.github.io/murrieta-gov/"
+SITE_URL = "https://realfactchecknews-eng.github.io/murrieta-gov/"

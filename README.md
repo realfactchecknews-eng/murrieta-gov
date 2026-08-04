@@ -123,7 +123,8 @@ ALLOWED_ORIGINS = "https://ВАШ-НИК.github.io"
 и задеплойте ещё раз. Без этого Worker вернёт 403 — так и задумано, чтобы вашим
 ключом не пользовались посторонние.
 
-Адрес Worker вставляется в `assets/js/ai.js` (константа `WORKER_DEFAULT`) либо
+Worker уже развёрнут: `https://murrieta-ai.realfactchecknews.workers.dev`.
+Адрес прописан в `assets/js/ai.js` (константа `WORKER_DEFAULT`); его можно поменять
 прямо на странице — кнопка «Настроить» в чате сохранит его в браузере.
 
 ### 3. Свой домен

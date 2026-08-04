@@ -8,9 +8,10 @@
 
 /* Адрес вашего Cloudflare Worker. Можно переопределить прямо на странице
    (кнопка «Настроить») — значение сохранится в localStorage. */
-const WORKER_DEFAULT = 'https://murrieta-ai.YOUR-SUBDOMAIN.workers.dev';
+const WORKER_DEFAULT = 'https://murrieta-ai.realfactchecknews.workers.dev';
 const workerUrl = () => (localStorage.getItem('murrieta_worker') || WORKER_DEFAULT).replace(/\/+$/,'');
-const isConfigured = () => !workerUrl().includes('YOUR-SUBDOMAIN');
+const isConfigured = () => /^https:\/\/.+\.workers\.dev|^https?:\/\//.test(workerUrl())
+                        && !workerUrl().includes('YOUR-SUBDOMAIN');
 
 const AI = { chunks:null, idf:null, history:[], busy:false };
 window.AI = AI;
