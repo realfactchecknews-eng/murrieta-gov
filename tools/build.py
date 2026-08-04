@@ -121,7 +121,8 @@ def parse_doc(path):
         if POST_RE.match(clean(ln)):
             body_start = i
             break
-    sections, cur = [], {"heading": "", "level": 1, "paras": []}
+    sections, cur = [], {"heading": "", "level": 1, "paras": [], "parent": ""}
+    parent = ""          # последняя встреченная глава/раздел
     post_no = 1
     for ln in lines[body_start:]:
         s = clean(ln)
@@ -140,7 +141,9 @@ def parse_doc(path):
             if cur["paras"] or cur["heading"]:
                 sections.append(cur)
             lvl = 1 if re.match(r"^(Глава|Раздел|Общая часть|Особенная часть)", s, re.I) else 2
-            cur = {"heading": s, "level": lvl, "paras": []}
+            if lvl == 1:
+                parent = s
+            cur = {"heading": s, "level": lvl, "paras": [], "parent": "" if lvl == 1 else parent}
             if post_no > 1:
                 cur["amendment"] = True
             continue
@@ -296,7 +299,9 @@ def make_chunks(doc_id, title, cat, url, sections, limit=1400):
     for sec in sections:
         if not sec["paras"]:      # заголовок без текста — в RAG не нужен
             continue
-        head = sec["heading"]
+        # В заголовок чанка подставляем и родительскую главу — иначе модель
+        # цитирует «ст. 1», не зная, что это глава IX.
+        head = (sec.get("parent") + " · " + sec["heading"]).strip(" ·") if sec.get("parent") else sec["heading"]
         buf, size = [], 0
         for p in sec["paras"]:
             # Примечание/Исключение/Пример нельзя отрывать от своего пункта:
