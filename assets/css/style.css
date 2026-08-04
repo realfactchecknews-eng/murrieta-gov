@@ -403,6 +403,38 @@ kbd{
   .pc{flex-direction:column;gap:8px}
 }
 
+/* ------------------------------------------------ генератор --- */
+.formgen{display:grid;grid-template-columns:220px 1fr 1fr;gap:18px;align-items:start}
+.formgen__nav{position:sticky;top:96px;display:flex;flex-direction:column;gap:18px}
+.fg-group b{display:block;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--acc);margin-bottom:9px}
+.fg-group .chips{flex-direction:column;align-items:stretch}
+.fg-group .chip{text-align:left;font-size:12.5px;padding:8px 11px}
+.formgen__body{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px}
+.fg-title{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.fg-note{margin:8px 0 0;font-size:13px;color:var(--tx-2);line-height:1.55}
+.fg-fields{display:flex;flex-direction:column;gap:13px}
+.fg label.fg,.fg-fields label.fg{display:flex;flex-direction:column;gap:6px}
+.fg-fields label.fg span{font-size:12.5px;font-weight:600;color:var(--tx-2)}
+.fg-fields label.fg span i{font-style:normal;font-weight:400;color:var(--tx-3)}
+.field-i{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+  font-size:13.5px;color:var(--tx);outline:none;transition:border-color .22s;font-family:inherit;resize:vertical;
+}
+.field-i:focus{border-color:rgba(255,123,46,.5)}
+select.field-i{appearance:none;cursor:pointer}
+.formgen__preview{position:sticky;top:96px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;max-height:calc(100vh - 120px);display:flex;flex-direction:column}
+.fg-pv-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;flex:none}
+.fg-pv-head b{font-size:13px;letter-spacing:.04em}
+.fg-pv{
+  flex:1;margin:0;overflow-y:auto;white-space:pre-wrap;font-family:"JetBrains Mono",monospace;
+  font-size:12.5px;line-height:1.65;color:#d5d5d9;background:var(--surface);border-radius:10px;padding:14px 16px;
+}
+@media (max-width:1040px){
+  .formgen{grid-template-columns:1fr}
+  .formgen__nav{position:static;flex-direction:row;flex-wrap:wrap;gap:12px}
+  .formgen__preview{position:static;max-height:420px}
+}
+
 /* ------------------------------------------------ cmd+k ------ */
 .cmdk{position:fixed;inset:0;z-index:90;display:grid;place-items:start center;padding-top:11vh}
 .cmdk[hidden]{display:none}

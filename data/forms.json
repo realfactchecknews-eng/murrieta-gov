@@ -1,0 +1,819 @@
+{
+  "updated": "2026-08-05",
+  "source": "https://forum.gta5rp.com/threads/forma-podachi-iskovykh-zayavlenii-apellyatsii-kassatsii-i-obrashchenii-v-verkhovnyi-sud.3248888/ · forma-podachi-iskovykh-zayavlenii-v-federal-nyi-sud.3250049 · pravila-podachi-iskovykh-zayavlenii.3259166 · myu-sistema-obrashchenii-i-khodataistv-v-prokuraturu-shtata-san-andreas.3406039",
+  "groups": [
+    {
+      "id": "vs",
+      "name": "Верховный суд",
+      "forms": [
+        "vs-isk",
+        "vs-apellyaciya",
+        "vs-kassaciya",
+        "vs-tolkovanie",
+        "vs-hodataystvo"
+      ]
+    },
+    {
+      "id": "fs",
+      "name": "Федеральный суд",
+      "forms": [
+        "fs-isk",
+        "fs-hodataystvo"
+      ]
+    },
+    {
+      "id": "prok",
+      "name": "Прокуратура",
+      "forms": [
+        "prok-obraschenie"
+      ]
+    }
+  ],
+  "forms": [
+    {
+      "id": "vs-isk",
+      "title": "Исковое заявление в Верховный суд",
+      "note": "Нумерация — «Исковое заявление №…», номер ставится по возрастанию от последнего опубликованного (Правила подачи исковых заявлений, гл. II ст. 1).",
+      "fields": [
+        {
+          "key": "predstavitelstvo",
+          "label": "Юридическое представительство",
+          "type": "select",
+          "options": [
+            "нет",
+            "да"
+          ],
+          "default": "нет"
+        },
+        {
+          "key": "istec_imya",
+          "label": "Истец — имя и фамилия",
+          "type": "text",
+          "placeholder": "Имя Фамилия"
+        },
+        {
+          "key": "istec_pasport",
+          "label": "Истец — номер паспорта (ID-card)",
+          "type": "text",
+          "placeholder": "000000"
+        },
+        {
+          "key": "istec_tel",
+          "label": "Истец — номер телефона",
+          "type": "text",
+          "placeholder": "000-000"
+        },
+        {
+          "key": "istec_mail",
+          "label": "Истец — Discord",
+          "type": "text",
+          "placeholder": "nickname"
+        },
+        {
+          "key": "predst_imya",
+          "label": "Представитель — имя и фамилия (если есть)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_pasport",
+          "label": "Представитель — номер паспорта",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_licenz",
+          "label": "Представитель — номер адвокатской лицензии",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_dogovor",
+          "label": "Представитель — номер договора",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_tel",
+          "label": "Представитель — телефон",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_mail",
+          "label": "Представитель — Discord",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_imya",
+          "label": "Ответчик — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "otvetchik_rabota",
+          "label": "Ответчик — место работы",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_dolzhnost",
+          "label": "Ответчик — должность",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_znak",
+          "label": "Ответчик — идентификационный знак (жетон/нашивка)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "opisanie",
+          "label": "Описание ситуации",
+          "type": "textarea",
+          "placeholder": "Дата, время, обстоятельства, в чём нарушение и как затронуты ваши права"
+        },
+        {
+          "key": "materialy",
+          "label": "Материалы (доказательства, ссылки)",
+          "type": "textarea",
+          "placeholder": "1. Копия паспорта истца: ссылка\n2. Доказательства: ссылка\n3. Иные материалы: ссылка"
+        },
+        {
+          "key": "prosba",
+          "label": "Просьба к суду",
+          "type": "textarea",
+          "placeholder": "1. Признать ответчика виновным по статьям …\n2. Взыскать моральную компенсацию в размере $…\n3. …"
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nДанные ответчика:\nИмя фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nИдентификационный знак: {{otvetchik_znak}}\n\nИСКОВОЕ ЗАЯВЛЕНИЕ\n\n{{opisanie}}\n\nМАТЕРИАЛЫ ЗАЯВЛЕНИЯ\n\n{{materialy}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\nНа основании вышеизложенного, прошу суд:\n{{prosba}}\n\nДата подачи искового заявления: {{data}}\nПодпись истца или его представителя: ________"
+    },
+    {
+      "id": "vs-apellyaciya",
+      "title": "Апелляционная жалоба в Верховный суд",
+      "note": "Название темы — «Апелляционная жалоба №…». Срок на подачу — 48 часов с момента публикации окончательного судебного акта (толкование №611); восстановление срока возможно только в исключительных случаях и не позднее 31 суток с момента публикации акта.",
+      "fields": [
+        {
+          "key": "predstavitelstvo",
+          "label": "Юридическое представительство",
+          "type": "select",
+          "options": [
+            "нет",
+            "да"
+          ],
+          "default": "нет"
+        },
+        {
+          "key": "istec_imya",
+          "label": "Истец — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "istec_pasport",
+          "label": "Истец — номер паспорта",
+          "type": "text"
+        },
+        {
+          "key": "istec_tel",
+          "label": "Истец — телефон",
+          "type": "text"
+        },
+        {
+          "key": "istec_mail",
+          "label": "Истец — Discord",
+          "type": "text"
+        },
+        {
+          "key": "predst_imya",
+          "label": "Представитель — имя и фамилия (если есть)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_pasport",
+          "label": "Представитель — номер паспорта",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_licenz",
+          "label": "Представитель — номер лицензии",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_dogovor",
+          "label": "Представитель — номер договора",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_tel",
+          "label": "Представитель — телефон",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_mail",
+          "label": "Представитель — Discord",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "sudya",
+          "label": "Судья, чей акт обжалуется",
+          "type": "text"
+        },
+        {
+          "key": "akt_nazvanie",
+          "label": "Наименование обжалуемого акта Федерального суда (ссылка)",
+          "type": "text"
+        },
+        {
+          "key": "akt_data",
+          "label": "Дата публикации обжалуемого акта",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        },
+        {
+          "key": "osnovaniya",
+          "label": "Основания для апелляционного обжалования",
+          "type": "textarea"
+        },
+        {
+          "key": "prosba",
+          "label": "Просьба к суду",
+          "type": "textarea",
+          "placeholder": "1. Отменить судебный акт суда первой инстанции полностью или в части и разрешить вопрос по существу.\n2. Отменить судебный акт и направить дело на новое рассмотрение."
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи жалобы",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nОбжалуемый акт:\nСудья: {{sudya}}\nНаименование обжалуемого акта Федерального суда: {{akt_nazvanie}}\nДата публикации обжалуемого акта Федерального суда: {{akt_data}}\n\nАПЕЛЛЯЦИОННАЯ ЖАЛОБА\n\n{{osnovaniya}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи апелляционной жалобы: {{data}}\nПодпись истца или его представителя: ________"
+    },
+    {
+      "id": "vs-kassaciya",
+      "title": "Кассационная жалоба в Верховный суд",
+      "note": "Название темы — «Кассационная жалоба №…». Подаётся на акты первой и апелляционной инстанций.",
+      "fields": [
+        {
+          "key": "predstavitelstvo",
+          "label": "Юридическое представительство",
+          "type": "select",
+          "options": [
+            "нет",
+            "да"
+          ],
+          "default": "нет"
+        },
+        {
+          "key": "istec_imya",
+          "label": "Истец — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "istec_pasport",
+          "label": "Истец — номер паспорта",
+          "type": "text"
+        },
+        {
+          "key": "istec_tel",
+          "label": "Истец — телефон",
+          "type": "text"
+        },
+        {
+          "key": "istec_mail",
+          "label": "Истец — Discord",
+          "type": "text"
+        },
+        {
+          "key": "predst_imya",
+          "label": "Представитель — имя и фамилия (если есть)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_pasport",
+          "label": "Представитель — номер паспорта",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_licenz",
+          "label": "Представитель — номер лицензии",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_dogovor",
+          "label": "Представитель — номер договора",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_tel",
+          "label": "Представитель — телефон",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_mail",
+          "label": "Представитель — Discord",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "sudya",
+          "label": "Судья, чей акт обжалуется",
+          "type": "text"
+        },
+        {
+          "key": "akt_nazvanie",
+          "label": "Наименование обжалуемого судебного акта (ссылка)",
+          "type": "text"
+        },
+        {
+          "key": "akt_data",
+          "label": "Дата публикации обжалуемого акта",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        },
+        {
+          "key": "osnovaniya",
+          "label": "Основания для кассационного обжалования",
+          "type": "textarea"
+        },
+        {
+          "key": "prosba",
+          "label": "Просьба к суду",
+          "type": "textarea",
+          "placeholder": "1. Отменить судебные акты первой и апелляционной инстанций и направить дело на новое рассмотрение.\n2. Отменить один или несколько судебных актов."
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи жалобы",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nОбжалуемый акт:\nСудья: {{sudya}}\nНаименование обжалуемого судебного акта: {{akt_nazvanie}}\nДата публикации обжалуемого акта: {{akt_data}}\n\nКАССАЦИОННАЯ ЖАЛОБА\n\n{{osnovaniya}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи кассационной жалобы: {{data}}\nПодпись истца или его представителя: ________"
+    },
+    {
+      "id": "vs-tolkovanie",
+      "title": "Жалоба на неконституционность НПА / запрос трактования",
+      "note": "Используется для жалобы на неконституционность нормативного акта или его противоречие вышестоящему акту, а также для запроса официального толкования нормы у Верховного суда.",
+      "fields": [
+        {
+          "key": "predstavitelstvo",
+          "label": "Юридическое представительство",
+          "type": "select",
+          "options": [
+            "нет",
+            "да"
+          ],
+          "default": "нет"
+        },
+        {
+          "key": "istec_imya",
+          "label": "Истец — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "istec_pasport",
+          "label": "Истец — номер паспорта",
+          "type": "text"
+        },
+        {
+          "key": "istec_tel",
+          "label": "Истец — телефон",
+          "type": "text"
+        },
+        {
+          "key": "istec_mail",
+          "label": "Истец — Discord",
+          "type": "text"
+        },
+        {
+          "key": "otvetchik_imya",
+          "label": "Лицо/орган, издавший акт (при жалобе на неконституционность)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_rabota",
+          "label": "Место работы",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_dolzhnost",
+          "label": "Должность",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "gosorgan",
+          "label": "Наименование гос. органа, издавшего акт",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "akt_nazvanie",
+          "label": "Наименование обжалуемого акта и дата публикации (ссылка)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "npa",
+          "label": "Закон или иной НПА (при запросе трактования)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "tip",
+          "label": "Тип обращения",
+          "type": "select",
+          "options": [
+            "Жалоба на неконституционность",
+            "Получение трактования"
+          ],
+          "default": "Получение трактования"
+        },
+        {
+          "key": "opisanie",
+          "label": "Описание в развёрнутой форме",
+          "type": "textarea"
+        },
+        {
+          "key": "dokazatelstva",
+          "label": "Доказательная база (если нужна)",
+          "type": "textarea",
+          "optional": true
+        },
+        {
+          "key": "prosba",
+          "label": "Просьба к суду",
+          "type": "textarea"
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n\nДанные ответчика:\nИмя Фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nНаименование государственного органа, издавшего акт: {{gosorgan}}\nНаименование обжалуемого акта, дата его публикации: {{akt_nazvanie}}\n\nЗакон или иной НПА: {{npa}}\n\n{{tip}}\n\n{{opisanie}}\n\nДОКАЗАТЕЛЬНАЯ БАЗА\n\n{{dokazatelstva}}\n\nПРОСЬБА К ВЕРХОВНОМУ СУДУ\n\n{{prosba}}\n\nДата подачи обращения: {{data}}\nПодпись истца или его представителя: ________"
+    },
+    {
+      "id": "vs-hodataystvo",
+      "title": "Ходатайство в Верховный суд",
+      "note": "Копия паспорта заявителя обязательна только при первом обращении к суду от своего лица.",
+      "fields": [
+        {
+          "key": "predstavitelstvo",
+          "label": "Юридическое представительство",
+          "type": "select",
+          "options": [
+            "нет",
+            "да"
+          ],
+          "default": "нет"
+        },
+        {
+          "key": "imya",
+          "label": "Заявитель — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "pasport",
+          "label": "Заявитель — номер паспорта",
+          "type": "text"
+        },
+        {
+          "key": "pasport_kopiya",
+          "label": "Копия паспорта (ссылка, если первое обращение)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "tel",
+          "label": "Телефон",
+          "type": "text"
+        },
+        {
+          "key": "mail",
+          "label": "Discord",
+          "type": "text"
+        },
+        {
+          "key": "tekst",
+          "label": "Текст ходатайства",
+          "type": "textarea",
+          "placeholder": "Обстоятельства дела, причина ходатайства и просьба к суду"
+        },
+        {
+          "key": "podpis_imya",
+          "label": "Ваше имя для подписи «С уважением»",
+          "type": "text"
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В Верховный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные заявителя:\nИмя Фамилия: {{imya}}\nНомер паспорта (ID-card): {{pasport}}\nКопия паспорта заявителя: {{pasport_kopiya}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nХОДАТАЙСТВО\n\nВаша честь, {{tekst}}\n\nС уважением {{podpis_imya}}\n\nДата подачи ходатайства: {{data}}\nПодпись заявителя: ________"
+    },
+    {
+      "id": "fs-isk",
+      "title": "Исковое заявление в Федеральный суд",
+      "note": "Первая инстанция — сюда подаётся большинство исков. Апелляция на решение Федерального суда подаётся уже в Верховный суд.",
+      "fields": [
+        {
+          "key": "predstavitelstvo",
+          "label": "Юридическое представительство",
+          "type": "select",
+          "options": [
+            "нет",
+            "да"
+          ],
+          "default": "нет"
+        },
+        {
+          "key": "istec_imya",
+          "label": "Истец — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "istec_pasport",
+          "label": "Истец — номер паспорта",
+          "type": "text"
+        },
+        {
+          "key": "istec_tel",
+          "label": "Истец — телефон",
+          "type": "text"
+        },
+        {
+          "key": "istec_mail",
+          "label": "Истец — Discord",
+          "type": "text"
+        },
+        {
+          "key": "predst_imya",
+          "label": "Представитель — имя и фамилия (если есть)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_pasport",
+          "label": "Представитель — номер паспорта",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_licenz",
+          "label": "Представитель — номер лицензии",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_dogovor",
+          "label": "Представитель — номер договора",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_tel",
+          "label": "Представитель — телефон",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predst_mail",
+          "label": "Представитель — Discord",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_imya",
+          "label": "Ответчик — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "otvetchik_rabota",
+          "label": "Ответчик — место работы",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_dolzhnost",
+          "label": "Ответчик — должность",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "otvetchik_znak",
+          "label": "Ответчик — идентификационный знак",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "opisanie",
+          "label": "Описание ситуации",
+          "type": "textarea"
+        },
+        {
+          "key": "materialy",
+          "label": "Материалы (доказательства, ссылки)",
+          "type": "textarea"
+        },
+        {
+          "key": "prosba",
+          "label": "Просьба к суду",
+          "type": "textarea"
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В Федеральный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные истца:\nИмя Фамилия: {{istec_imya}}\nНомер паспорта (ID-card): {{istec_pasport}}\nНомер телефона: {{istec_tel}}\nЭлектронная почта: {{istec_mail}}\n{{#predstavitelBlock}}\nДанные представителя истца:\nИмя Фамилия: {{predst_imya}}\nНомер паспорта (ID-card): {{predst_pasport}}\nНомер адвокатской лицензии: {{predst_licenz}}\nНомер договора: {{predst_dogovor}}\nНомер телефона: {{predst_tel}}\nЭлектронная почта: {{predst_mail}}\n{{/predstavitelBlock}}\nДанные ответчика:\nИмя фамилия: {{otvetchik_imya}}\nМесто работы: {{otvetchik_rabota}}\nДолжность: {{otvetchik_dolzhnost}}\nИдентификационный знак: {{otvetchik_znak}}\n\nИСКОВОЕ ЗАЯВЛЕНИЕ\n\n{{opisanie}}\n\nМАТЕРИАЛЫ ЗАЯВЛЕНИЯ\n\n{{materialy}}\n\nПРОСЬБА К ФЕДЕРАЛЬНОМУ СУДУ\n\nНа основании вышеизложенного, прошу суд:\n{{prosba}}\n\nДата подачи искового заявления: {{data}}\nПодпись истца или его представителя: ________"
+    },
+    {
+      "id": "fs-hodataystvo",
+      "title": "Ходатайство в Федеральный суд",
+      "note": "Копия паспорта заявителя обязательна только при первом обращении к суду от своего лица.",
+      "fields": [
+        {
+          "key": "predstavitelstvo",
+          "label": "Юридическое представительство",
+          "type": "select",
+          "options": [
+            "нет",
+            "да"
+          ],
+          "default": "нет"
+        },
+        {
+          "key": "imya",
+          "label": "Заявитель — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "pasport",
+          "label": "Заявитель — номер паспорта",
+          "type": "text"
+        },
+        {
+          "key": "pasport_kopiya",
+          "label": "Копия паспорта (ссылка, если первое обращение)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "tel",
+          "label": "Телефон",
+          "type": "text"
+        },
+        {
+          "key": "mail",
+          "label": "Discord",
+          "type": "text"
+        },
+        {
+          "key": "tekst",
+          "label": "Текст ходатайства",
+          "type": "textarea"
+        },
+        {
+          "key": "podpis_imya",
+          "label": "Ваше имя для подписи «С уважением»",
+          "type": "text"
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В Федеральный суд штата Сан-Андреас\nЮридическое представительство: {{predstavitelstvo}}\n\nДанные заявителя:\nИмя Фамилия: {{imya}}\nНомер паспорта (ID-card): {{pasport}}\nКопия паспорта заявителя: {{pasport_kopiya}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nХОДАТАЙСТВО\n\nВаша честь, {{tekst}}\n\nС уважением {{podpis_imya}}\n\nДата подачи ходатайства: {{data}}\nПодпись заявителя: ________"
+    },
+    {
+      "id": "prok-obraschenie",
+      "title": "Обращение в прокуратуру штата",
+      "note": "Название темы — «ОБРАЩЕНИЕ В ПРОКУРАТУРУ ШТАТА САН-АНДРЕАС № … ОТ ГР-НА Имя Фамилия». Срок рассмотрения — решение о принятии/отказе/оставлении без движения в течение 48 часов. С момента события должно пройти не более 72 часов на момент подачи.",
+      "fields": [
+        {
+          "key": "imya",
+          "label": "Заявитель — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "pasport",
+          "label": "Заявитель — номер паспорта",
+          "type": "text"
+        },
+        {
+          "key": "tel",
+          "label": "Телефон",
+          "type": "text"
+        },
+        {
+          "key": "mail",
+          "label": "Discord",
+          "type": "text",
+          "placeholder": "((discord))@sa.com"
+        },
+        {
+          "key": "proverka_imya",
+          "label": "Проверяемое лицо — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "proverka_rabota",
+          "label": "Проверяемое лицо — место работы (фракция, подразделение)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "proverka_dolzhnost",
+          "label": "Проверяемое лицо — должность",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "proverka_znak",
+          "label": "Проверяемое лицо — идентификационный знак",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "opisanie",
+          "label": "Описание ситуации",
+          "type": "textarea",
+          "placeholder": "Дата и время происшествия, конкретные действия/бездействие, которые нарушают закон или ваши права"
+        },
+        {
+          "key": "materialy",
+          "label": "Приложения (копия паспорта, доказательства, ссылки)",
+          "type": "textarea",
+          "placeholder": "1. Копия паспорта заявителя: ссылка\n2. Доказательства: ссылка\n3. Иные материалы: ссылка"
+        },
+        {
+          "key": "prosba",
+          "label": "Прошения к прокуратуре",
+          "type": "textarea",
+          "placeholder": "1. Провести всестороннюю проверку изложенных фактов\n2. Рассмотреть обращение для выявления нарушений\n3. Принять меры прокурорского реагирования, если нарушения будут выявлены"
+        },
+        {
+          "key": "data",
+          "label": "Дата подачи",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "В прокуратуру штата Сан-Андреас\nОт Гражданина Штата Сан-Андреас\nИмя Фамилия: {{imya}}\nНомер паспорта: {{pasport}}\nНомер телефона: {{tel}}\nЭлектронная почта: {{mail}}\n\nДанные проверяемого лица:\nИмя Фамилия: {{proverka_imya}}\nМесто работы: {{proverka_rabota}}\nДолжность: {{proverka_dolzhnost}}\nИдентификационный знак: {{proverka_znak}}\n\nОБРАЩЕНИЕ В ПРОКУРАТУРУ\n\n{{opisanie}}\n\nПРИЛОЖЕНИЯ К ОБРАЩЕНИЮ\n\n{{materialy}}\n\nПРОШЕНИЯ К ПРОКУРАТУРЕ\n\nНа основании изложенного прошу органы прокуратуры:\n{{prosba}}\n\nДата подачи обращения: {{data}}\nПодпись заявителя: ________"
+    }
+  ],
+  "rejectionGrounds": {
+    "title": "Когда заявление вернут без рассмотрения",
+    "court": [
+      "Отредактировано без ходатайства об уточнении требований",
+      "В производстве уже есть дело между теми же сторонами по тому же предмету и основаниям",
+      "Истец отказался от иска до принятия к производству",
+      "Дело неподсудно данному суду",
+      "Нарушены требования к форме, содержанию или названию темы",
+      "Иск подан к лицу, которое не является субъектом спорных правоотношений",
+      "С момента события прошло более 90 часов"
+    ],
+    "prokuratura": [
+      "С момента события прошло более 72 часов",
+      "Нарушена форма подачи, отсутствуют обязательные реквизиты",
+      "Некорректное оформление: нет подтверждения личности, не пронумеровано, нарушена структура",
+      "Отредактировано после подачи без ходатайства",
+      "Нет конкретного события или состава правонарушения",
+      "Нецензурная лексика, угрозы жизни/здоровью/имуществу должностных лиц или их семей",
+      "Нет таймкодов для видео длиннее 10 минут",
+      "Недостаточно доказательств",
+      "Невозможно установить личность проверяемого лица",
+      "Подано третьим лицом без действующего договора на юр. помощь",
+      "Материалы повреждены, низкого качества или не позволяют проверить факты"
+    ]
+  }
+}

@@ -3,7 +3,7 @@
    ============================================================ */
 'use strict';
 
-const DATA = { index:null, articles:null, traffic:null, quickref:null, guides:null, docs:{} };
+const DATA = { index:null, articles:null, traffic:null, quickref:null, guides:null, forms:null, docs:{} };
 const $  = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 
@@ -22,6 +22,7 @@ const loadArticles = ()=>load('articles','data/articles.json');
 const loadTraffic  = ()=>load('traffic','data/traffic.json');
 const loadQuick    = ()=>load('quickref','data/quickref.json');
 const loadGuides   = ()=>load('guides','data/guides.json');
+const loadForms    = ()=>load('forms','data/forms.json');
 async function loadDoc(id){
   if (DATA.docs[id]) return DATA.docs[id];
   const r = await fetch('data/docs/'+id+'.json');
@@ -383,6 +384,99 @@ async function viewGuides(params){
 }
 
 /* ============================================================
+   ЗАЯВЛЕНИЯ (генератор форм в суд / прокуратуру)
+   ============================================================ */
+const formState = { formId:null, values:{} };
+
+function renderFormTemplate(form, values){
+  let t = form.template;
+  const predstField = form.fields.find(f=>f.key==='predstavitelstvo');
+  const showPredst = (values.predstavitelstvo ?? predstField?.default) === 'да';
+  t = t.replace(/\{\{#predstavitelBlock\}\}([\s\S]*?)\{\{\/predstavitelBlock\}\}/g, showPredst ? '$1' : '');
+  t = t.replace(/\{\{(\w+)\}\}/g, (m,k)=>{
+    const f = form.fields.find(x=>x.key===k);
+    const v = values[k] ?? f?.default;
+    if (v && String(v).trim()) return v;
+    if (f && f.optional) return '';
+    return f ? '['+f.label+']' : '';
+  });
+  return t.replace(/\n{3,}/g,'\n\n');
+}
+
+async function viewForms(params){
+  const data = await loadForms();
+  const fid = params.get('f') || data.forms[0].id;
+  const form = data.forms.find(f=>f.id===fid) || data.forms[0];
+  if (formState.formId !== form.id){ formState.formId = form.id; formState.values = {}; }
+
+  const fieldHtml = f => {
+    const val = esc(formState.values[f.key] ?? f.default ?? '');
+    if (f.type === 'select'){
+      return `<label class="fg"><span>${esc(f.label)}</span>
+        <select class="field-i" data-k="${f.key}">
+          ${f.options.map(o=>`<option value="${esc(o)}"${ (formState.values[f.key]||f.default)===o?' selected':''}>${esc(o)}</option>`).join('')}
+        </select></label>`;
+    }
+    if (f.type === 'textarea'){
+      return `<label class="fg"><span>${esc(f.label)}${f.optional?' <i>(необязательно)</i>':''}</span>
+        <textarea class="field-i" rows="3" data-k="${f.key}" placeholder="${esc(f.placeholder||'')}">${val}</textarea></label>`;
+    }
+    return `<label class="fg"><span>${esc(f.label)}${f.optional?' <i>(необязательно)</i>':''}</span>
+      <input class="field-i" type="text" data-k="${f.key}" placeholder="${esc(f.placeholder||'')}" value="${val}"></label>`;
+  };
+
+  const groupNav = data.groups.map(g=>`
+    <div class="fg-group">
+      <b>${esc(g.name)}</b>
+      <div class="chips">
+        ${g.forms.map(id=>{
+          const ff = data.forms.find(x=>x.id===id);
+          return `<a class="chip${id===form.id?' is-on':''}" href="#/forms?f=${id}">${esc(ff.title)}</a>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+
+  return `
+  <section class="sec view">
+    <div class="sec__head"><div><h2 class="h2">Заявления</h2>
+      <p>Официальные формы подачи исков, жалоб, ходатайств и обращений — заполните поля слева,
+         готовый текст соберётся справа. Формат и структура — с портала судебной системы.</p></div></div>
+
+    <div class="formgen">
+      <aside class="formgen__nav">${groupNav}</aside>
+      <div class="formgen__body">
+        <div class="fg-title">
+          <h3 class="h3">${esc(form.title)}</h3>
+          ${form.note?`<p class="fg-note">${esc(form.note)}</p>`:''}
+        </div>
+        <div class="fg-fields" id="fgFields">${form.fields.map(fieldHtml).join('')}</div>
+      </div>
+      <div class="formgen__preview">
+        <div class="fg-pv-head">
+          <b>Готовый текст</b>
+          <button class="btn btn--ghost" id="fgCopy" style="padding:7px 13px;font-size:12.5px">Скопировать</button>
+        </div>
+        <pre class="fg-pv" id="fgPreview">${esc(renderFormTemplate(form, formState.values))}</pre>
+      </div>
+    </div>
+  </section>`;
+}
+
+function bindForms(data, form){
+  const preview = $('#fgPreview');
+  $$('.field-i').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      formState.values[el.dataset.k] = el.value;
+      preview.textContent = renderFormTemplate(form, formState.values);
+    });
+  });
+  $('#fgCopy').addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(preview.textContent); toast('Скопировано'); }
+    catch{ toast('Не удалось скопировать — выделите текст вручную'); }
+  });
+}
+
+/* ============================================================
    ДОКУМЕНТЫ
    ============================================================ */
 async function viewDocs(params){
@@ -459,6 +553,7 @@ const ROUTES = [
   [/^\/dk$/,                'dk',    viewDk],
   [/^\/cards$/,             'cards', viewCards],
   [/^\/guides$/,            'guides',viewGuides],
+  [/^\/forms$/,             'forms', viewForms],
   [/^\/docs$/,              'docs',  viewDocs],
   [/^\/doc\/([\w-]+)$/,     'docs',  (p,m)=>viewDoc(m[1])],
   [/^\/ai$/,                'ai',    ()=>window.AI.view()],
@@ -515,6 +610,10 @@ function bindView(path){
   }
   if (path.startsWith('/doc/')) bindToc();
   if (path === '/ai') window.AI.bind();
+  if (path === '/forms' && DATA.forms){
+    const form = DATA.forms.forms.find(f=>f.id===formState.formId) || DATA.forms.forms[0];
+    bindForms(DATA.forms, form);
+  }
 }
 function rebindArts(){
   $$('.art__top').forEach(t=>{
