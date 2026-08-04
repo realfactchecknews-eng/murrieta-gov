@@ -528,6 +528,58 @@ function bindForms(data, form){
 }
 
 /* ============================================================
+   ПРАВОВАЯ ОЦЕНКА (кто прав, кто виноват, какие статьи)
+   ============================================================ */
+function viewAssess(){
+  return `
+  <section class="sec view">
+    <div class="sec__head"><div><h2 class="h2">Правовая оценка</h2>
+      <p>Опишите ситуацию с участием нескольких сторон — ИИ разберёт, кто прав, кто виноват,
+         по каким статьям и что каждая сторона может возразить. Не заменяет решение прокурора или суда.</p></div></div>
+
+    <div class="asg">
+      <label class="fg"><span>Опишите ситуацию — что произошло, кто участвовал, в какой роли</span>
+        <textarea class="field-i" id="asgInput" rows="6" placeholder="Например: гражданин отказался показать документы сотруднику LSPD, сотрудник применил тазер без предупреждения…"></textarea>
+      </label>
+      <div class="fg-ai__row">
+        <button class="btn btn--main" id="asgGo" style="padding:9px 18px;font-size:13px">Дать правовую оценку</button>
+        <span class="fg-ai__hint" id="asgHint">Разбор обычно занимает 10–25 секунд.</span>
+      </div>
+    </div>
+
+    <div class="asg-result" id="asgResult" hidden>
+      <div class="asg-card asg-card--verdict"><b>Вердикт</b><p id="asgVerdict"></p></div>
+      <div class="asg-card"><b>Разбор по сторонам</b><p id="asgSides"></p></div>
+      <div class="asg-card"><b>Что грозит</b><p id="asgPenalty"></p></div>
+      <div class="asg-card"><b>Возможные возражения</b><p id="asgDefense"></p></div>
+    </div>
+  </section>`;
+}
+
+function bindAssess(){
+  const go = $('#asgGo'), input = $('#asgInput'), hint = $('#asgHint'), result = $('#asgResult');
+  go.addEventListener('click', async ()=>{
+    const desc = input.value.trim();
+    if (!desc){ toast('Опишите ситуацию — поле пустое'); return; }
+    go.disabled = true; go.textContent = 'Разбираю…';
+    hint.textContent = 'Ищу применимые статьи и сверяю позиции сторон…';
+    try{
+      const r = await window.AI.assessSituation(desc);
+      $('#asgVerdict').innerHTML = md(r.verdict || '—');
+      $('#asgSides').innerHTML = md(r.sides || '—');
+      $('#asgPenalty').innerHTML = md(r.penalty || '—');
+      $('#asgDefense').innerHTML = md(r.defense || '—');
+      result.hidden = false;
+      hint.textContent = 'Готово. Это разбор ИИ, а не официальное решение — проверяйте важные детали сами.';
+    }catch(err){
+      hint.textContent = 'Ошибка: ' + err.message;
+    }finally{
+      go.disabled = false; go.textContent = 'Дать правовую оценку';
+    }
+  });
+}
+
+/* ============================================================
    ДОКУМЕНТЫ
    ============================================================ */
 async function viewDocs(params){
@@ -605,6 +657,7 @@ const ROUTES = [
   [/^\/cards$/,             'cards', viewCards],
   [/^\/guides$/,            'guides',viewGuides],
   [/^\/forms$/,             'forms', viewForms],
+  [/^\/assess$/,            'assess',viewAssess],
   [/^\/docs$/,              'docs',  viewDocs],
   [/^\/doc\/([\w-]+)$/,     'docs',  (p,m)=>viewDoc(m[1])],
   [/^\/ai$/,                'ai',    ()=>window.AI.view()],
@@ -665,6 +718,7 @@ function bindView(path){
     const form = DATA.forms.forms.find(f=>f.id===formState.formId) || DATA.forms.forms[0];
     bindForms(DATA.forms, form);
   }
+  if (path === '/assess') bindAssess();
 }
 function rebindArts(){
   $$('.art__top').forEach(t=>{

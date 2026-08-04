@@ -213,7 +213,11 @@ function forcedChunks(query){
   return out;
 }
 
-AI.draftPetition = async function(description, formTitle){
+/* Общая механика для «структурированных» режимов ИИ (составление
+   заявления, правовая оценка): собрать контекст той же схемой поиска,
+   что и обычный чат, дождаться потокового ответа целиком и разобрать
+   его на секции по заголовкам ### — вместо обычного чата с пузырьками. */
+async function callStructured(description, {mode, extra, sections}){
   if (!isConfigured()) throw new Error('ИИ не настроен — нажмите «Настроить» и укажите адрес Worker.');
   await ensureIndex();
   const forced = forcedChunks(description);
@@ -226,7 +230,7 @@ AI.draftPetition = async function(description, formTitle){
 
   const res = await fetch(workerUrl()+'/chat', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ question:description, context, mode:'draft', formTitle })
+    body: JSON.stringify({ question:description, context, mode, ...extra })
   });
   if (!res.ok){
     const t = await res.text().catch(()=> '');
@@ -248,18 +252,26 @@ AI.draftPetition = async function(description, formTitle){
       try{ const j = JSON.parse(p); const d = j.choices?.[0]?.delta?.content; if (d) acc += d; }catch{}
     }
   }
-  const pick = (label, stop) => {
-    const re = new RegExp('###\\s*'+label+'\\s*\\n([\\s\\S]*?)(?='+stop+'|$)', 'i');
+  const out = { raw: acc };
+  for (let i=0; i<sections.length; i++){
+    const [key, label] = sections[i];
+    const stop = i+1<sections.length ? '###\\s*'+sections[i+1][1] : '$';
+    const re = new RegExp('###\\s*'+label+'\\s*\\n([\\s\\S]*?)(?='+stop+')', 'i');
     const m = acc.match(re);
-    return m ? m[1].trim() : '';
-  };
-  return {
-    analysis: pick('АНАЛИЗ', '###\\s*ОПИСАНИЕ'),
-    description: pick('ОПИСАНИЕ СИТУАЦИИ', '###\\s*ПРОСЬБА'),
-    request: pick('ПРОСЬБА', '$'),
-    raw: acc,
-  };
-};
+    out[key] = m ? m[1].trim() : '';
+  }
+  return out;
+}
+
+AI.draftPetition = (description, formTitle) => callStructured(description, {
+  mode: 'draft', extra: { formTitle },
+  sections: [['analysis','АНАЛИЗ'],['description','ОПИСАНИЕ СИТУАЦИИ'],['request','ПРОСЬБА']],
+});
+
+AI.assessSituation = (description) => callStructured(description, {
+  mode: 'assess', extra: {},
+  sections: [['verdict','ВЕРДИКТ'],['sides','РАЗБОР ПО СТОРОНАМ'],['penalty','ЧТО ГРОЗИТ'],['defense','ВОЗМОЖНЫЕ ВОЗРАЖЕНИЯ']],
+});
 
 /* ------------------------------------------------ markdown ---- */
 function md(t){

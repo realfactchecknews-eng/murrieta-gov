@@ -403,6 +403,23 @@ kbd{
   .pc{flex-direction:column;gap:8px}
 }
 
+/* ------------------------------------------------ оценка ------ */
+.asg{
+  background:linear-gradient(135deg,var(--acc-soft),transparent);border:1px solid rgba(255,123,46,.22);
+  border-radius:var(--r-lg);padding:20px 22px;margin-bottom:22px;
+}
+.asg .field-i{width:100%}
+.asg-result{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.asg-result[hidden]{display:none}
+.asg-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px}
+.asg-card b{display:block;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--acc);margin-bottom:10px}
+.asg-card p{margin:0;font-size:14px;line-height:1.65;color:#d5d5d9}
+.asg-card p strong{color:#fff}
+.asg-card--verdict{grid-column:1/-1;border-color:rgba(255,123,46,.32);background:var(--acc-soft)}
+.asg-card--verdict b{color:var(--acc)}
+.asg-card--verdict p{font-size:15.5px;font-weight:550;color:var(--tx)}
+@media (max-width:860px){ .asg-result{grid-template-columns:1fr} }
+
 /* ------------------------------------------------ генератор --- */
 .formgen{display:grid;grid-template-columns:220px 1fr 1fr;gap:18px;align-items:start}
 .formgen__nav{position:sticky;top:96px;display:flex;flex-direction:column;gap:18px}
