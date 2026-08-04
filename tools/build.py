@@ -299,7 +299,11 @@ def make_chunks(doc_id, title, cat, url, sections, limit=1400):
         head = sec["heading"]
         buf, size = [], 0
         for p in sec["paras"]:
-            if size + len(p) > limit and buf:
+            # Примечание/Исключение/Пример нельзя отрывать от своего пункта:
+            # иначе в чанк попадёт текст без номера, к которому он относится,
+            # и модель припишет его соседнему пункту.
+            attached = bool(re.match(r"^(Примечание|Исключение|Пример|Пояснение)\b", p))
+            if size + len(p) > limit and buf and not attached:
                 out.append((head, "\n".join(buf)))
                 buf, size = [], 0
             buf.append(p)

@@ -111,11 +111,22 @@ export default {
           'X-Title': 'Murrieta Law Assistant',
         },
         body: JSON.stringify({
-          model: env.MODEL || 'qwen/qwen3.7-flash',
+          model: env.MODEL || 'google/gemini-2.5-flash-lite',
+          // Если провайдер основной модели недоступен или отдаёт 429,
+          // OpenRouter сам перейдёт к следующей из списка.
+          models: [
+            env.MODEL || 'google/gemini-2.5-flash-lite',
+            ...String(env.FALLBACK_MODELS || 'deepseek/deepseek-v4-flash-0731,mistralai/mistral-small-3.2-24b-instruct')
+              .split(',').map(s => s.trim()).filter(Boolean),
+          ],
           messages,
           stream: true,
           temperature: 0.15,
           max_tokens: Number(env.MAX_TOKENS || 900),
+          // Модели с «размышлением» (qwen3.x-flash и подобные) иначе тратят весь
+          // бюджет токенов на delta.reasoning, и content приходит пустым.
+          // Здесь рассуждать не над чем: ответ должен опираться на контекст.
+          reasoning: { enabled: false, exclude: true },
         }),
       });
     } catch (e) {
