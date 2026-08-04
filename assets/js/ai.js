@@ -283,10 +283,16 @@ AI.bind = function(){
     try{
       await ensureIndex();
       const ctx = retrieve(text, 8);
-      /* без номеров [1],[2] — иначе модель тащит их в ответ как «источники» */
-      const context = ctx.map(c=>
-        `—— ${c.docTitle}${c.heading?' · '+c.heading:''} ——\n${c.text}`).join('\n\n')
-        + await sanctionCard(text, ctx);
+      /* Без номеров [1],[2] — иначе модель тащит их в ответ как «источники».
+         Для памяток заголовок вообще не показываем: если модель видит
+         строку «Памятка: …», она копирует её в ответ как название
+         источника, хотя памятка не источник права — источник назван
+         внутри самого текста (УАК, ПК, номер прецедента). Кодексы и
+         законы подписываем как обычно. */
+      const context = ctx.map(c => c.doc.startsWith('guide-')
+        ? `—— внутренний разбор, источники см. в тексте ——\n${c.text}`
+        : `—— ${c.docTitle}${c.heading?' · '+c.heading:''} ——\n${c.text}`
+      ).join('\n\n') + await sanctionCard(text, ctx);
 
       const res = await fetch(workerUrl()+'/chat', {
         method:'POST', headers:{'Content-Type':'application/json'},
