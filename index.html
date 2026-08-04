@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Murrieta · Правовая база гос. структур</title>
+<meta name="description" content="Законодательная база и правила проекта GTA 5 RP, сервер Murrieta — для сотрудников государственных структур. Статьи УАК, Процессуальный кодекс, Дорожный кодекс, шпаргалки и ИИ-помощник.">
+<meta name="theme-color" content="#0a0a0b">
+<meta property="og:title" content="Murrieta · Правовая база гос. структур">
+<meta property="og:description" content="УАК, ПК, ДК, правила проекта и ИИ-помощник по законодательству сервера Murrieta.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0a0b'/%3E%3Cpath d='M16 5l9 3.4v6.9c0 5.5-3.7 10.3-9 11.8-5.3-1.5-9-6.3-9-11.8V8.4z' fill='none' stroke='%23FF7B2E' stroke-width='2.1' stroke-linejoin='round'/%3E%3Cpath d='M11.6 16.2l3 3 5.8-6' fill='none' stroke='%23FF7B2E' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div class="bg-fx" aria-hidden="true">
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow--a"></div>
+  <div class="bg-glow bg-glow--b"></div>
+  <div class="bg-noise"></div>
+</div>
+
+<header class="topbar" id="topbar">
+  <div class="wrap topbar__in">
+    <a class="brand" href="#/" aria-label="На главную">
+      <span class="brand__badge" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="26" height="26"><path d="M16 4l10 3.7v7.5c0 6-4 11.2-10 12.8C10 26.4 6 21.2 6 15.2V7.7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M11.4 16.3l3.2 3.2 6.1-6.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand__txt">
+        <b>MURRIETA</b>
+        <i>правовая база гос. структур</i>
+      </span>
+    </a>
+
+    <nav class="nav" id="nav">
+      <a href="#/" data-view="home">Главная</a>
+      <a href="#/uak" data-view="uak">Статьи УАК</a>
+      <a href="#/dk" data-view="dk">Дорожный</a>
+      <a href="#/cards" data-view="cards">Шпаргалки</a>
+      <a href="#/docs" data-view="docs">Документы</a>
+      <a href="#/ai" data-view="ai" class="nav__ai">ИИ-помощник</a>
+    </nav>
+
+    <div class="topbar__act">
+      <button class="btn-k" id="openSearch" title="Поиск (нажмите K)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+        <span>Поиск</span><kbd>K</kbd>
+      </button>
+      <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="topbar__bar" id="scrollbar"></div>
+</header>
+
+<main id="app" class="wrap"></main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <div>
+      <b>Murrieta · Правовая база</b>
+      <p>Неофициальный справочник. Источник — официальный форум GTA 5 RP. При расхождении приоритет всегда за форумом.</p>
+    </div>
+    <div class="foot__links">
+      <a href="https://forum.gta5rp.com/forums/zakonodatel-naya-baza.1732/" target="_blank" rel="noopener">Законодательная база ↗</a>
+      <a href="https://forum.gta5rp.com/forums/pravila-proyekta.5/" target="_blank" rel="noopener">Правила проекта ↗</a>
+      <span id="footMeta"></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ Командная палитра ============ -->
+<div class="cmdk" id="cmdk" hidden>
+  <div class="cmdk__back" data-close></div>
+  <div class="cmdk__box" role="dialog" aria-modal="true" aria-label="Поиск по базе">
+    <div class="cmdk__head">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+      <input id="cmdkInput" type="text" placeholder="Статья, слово, тема… напр. «12.8.1», «залог», «миранда»" autocomplete="off" spellcheck="false">
+      <button class="cmdk__esc" data-close>ESC</button>
+    </div>
+    <div class="cmdk__body" id="cmdkBody"></div>
+    <div class="cmdk__foot"><kbd>↑</kbd><kbd>↓</kbd> навигация · <kbd>Enter</kbd> открыть · <kbd>Esc</kbd> закрыть</div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="assets/js/app.js" defer></script>
+<script src="assets/js/ai.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+name = "murrieta-ai"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# Модель на OpenRouter. Дёшево и хорошо понимает русский:
+#   qwen/qwen3.7-flash            $0.030 / $0.130 за 1M токенов  ← по умолчанию
+#   deepseek/deepseek-v4-flash-0731  $0.090 / $0.180
+#   google/gemini-2.5-flash-lite     $0.100 / $0.400  (самый предсказуемый)
+MODEL = "qwen/qwen3.7-flash"
+
+# Максимум токенов в ответе — прямой рычаг на стоимость.
+MAX_TOKENS = "900"
+
+# Кто может обращаться к Worker. Укажите адрес своего сайта.
+# Для локальной проверки добавьте http://localhost:8080
+ALLOWED_ORIGINS = "https://ВАШ-НИК.github.io,http://localhost:8080"
+
+# Показывается в статистике OpenRouter
+SITE_URL = "https://ВАШ-НИК.github.io/murrieta-gov/"
