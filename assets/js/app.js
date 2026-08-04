@@ -3,7 +3,7 @@
    ============================================================ */
 'use strict';
 
-const DATA = { index:null, articles:null, traffic:null, quickref:null, docs:{} };
+const DATA = { index:null, articles:null, traffic:null, quickref:null, guides:null, docs:{} };
 const $  = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 
@@ -21,6 +21,7 @@ const loadIndex    = ()=>load('index','data/index.json');
 const loadArticles = ()=>load('articles','data/articles.json');
 const loadTraffic  = ()=>load('traffic','data/traffic.json');
 const loadQuick    = ()=>load('quickref','data/quickref.json');
+const loadGuides   = ()=>load('guides','data/guides.json');
 async function loadDoc(id){
   if (DATA.docs[id]) return DATA.docs[id];
   const r = await fetch('data/docs/'+id+'.json');
@@ -99,7 +100,7 @@ async function viewHome(){
 
   const cards = [
     ['cards','Шпаргалки','#/cards','Порядок задержания и ареста, Миранда, тайминги, стадии применения силы, обыск, неприкосновенные лица — всё выверено по действующей редакции.','shield'],
-    ['uak','Статьи УАК','#/uak',`${arts.length} статей с санкциями, залогами и сроками. Фильтры по типу, юрисдикции и главе, мгновенный поиск.`,'balance'],
+    ['guides','Памятки','#/guides','Как отвечать адвокату, чем отличаются LSPD, LSSD, FIB и GOV, где правила проекта запрещают то, что закон разрешает, и что меняют прецеденты.','scale'],
     ['ai','ИИ-помощник','#/ai','Задайте вопрос по законке или правилам обычным языком — ответ со ссылками на конкретные статьи и документы.','chat'],
   ];
 
@@ -332,6 +333,69 @@ async function viewCards(){
 }
 
 /* ============================================================
+   ПАМЯТКИ (адвокат / фракции / конфликты / прецеденты)
+   ============================================================ */
+const guideBlock = b => {
+  const H = t => t ? `<b class="gb__h">${esc(t)}</b>` : '';
+  switch (b.type){
+    case 'warn':
+      return `<div class="gb gb--warn">${H(b.title)}<p>${esc(b.text)}</p></div>`;
+    case 'note':
+      return `<div class="gb gb--note"><p>${esc(b.text)}</p></div>`;
+    case 'list':
+      return `<div class="gb gb--${b.tone||'plain'}">${H(b.title)}
+        <ul class="gb__ul">${b.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+    case 'table':
+      return `<div class="gb">${H(b.title)}<table class="qtable qtable--wide">
+        ${b.rows.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>`;
+    case 'cards':
+      return `<div class="gb">${H(b.title)}<div class="fgrid">
+        ${b.items.map(i=>`<div class="fcard"><div class="fcard__h"><b>${esc(i.name)}</b>
+          <span class="tag tag--acc">${esc(i.tag)}</span></div><p>${esc(i.text)}</p></div>`).join('')}
+      </div></div>`;
+    case 'conflicts':
+      return `<div class="gb">${b.items.map(c=>`
+        <div class="cf">
+          <b class="cf__t">${esc(c.topic)}</b>
+          <div class="cf__row cf__row--law"><span>Закон</span><p>${esc(c.law)}</p></div>
+          <div class="cf__row cf__row--rule"><span>Правила</span><p>${esc(c.rule)}</p></div>
+          <div class="cf__row cf__row--out"><span>Итог</span><p>${esc(c.verdict)}</p></div>
+          ${c.penalty?`<div class="cf__pen">${esc(c.penalty)}</div>`:''}
+        </div>`).join('')}</div>`;
+    case 'prec':
+      return `<div class="gb">${b.items.map(p=>`
+        <div class="pc">
+          <span class="pc__n">${esc(p.num)}</span>
+          <div><b>${esc(p.topic)}</b><p>${esc(p.text)}</p></div>
+        </div>`).join('')}</div>`;
+    default: return '';
+  }
+};
+
+async function viewGuides(params){
+  const g = await loadGuides();
+  const id = params.get('g') || g.guides[0].id;
+  const cur = g.guides.find(x=>x.id===id) || g.guides[0];
+  return `
+  <section class="sec view">
+    <div class="sec__head"><div><h2 class="h2">Памятки гос. сотрудника</h2>
+      <p>Разборы под конкретные ситуации: как отвечать адвокату, чем отличаются структуры
+         и где правила проекта перекрывают закон.</p></div></div>
+    <div class="tools"><div class="chips">
+      ${g.guides.map(x=>`<a class="chip${x.id===cur.id?' is-on':''}" href="#/guides?g=${x.id}">${esc(x.title)}</a>`).join('')}
+    </div></div>
+    <article class="guide rv">
+      <div class="guide__head">
+        <span class="card__ico">${ico(cur.icon,20)}</span>
+        <div><h3 class="h2" style="font-size:23px">${esc(cur.title)}</h3>
+        <p class="lead" style="font-size:14.5px;margin-top:7px">${esc(cur.lead)}</p></div>
+      </div>
+      ${cur.blocks.map(guideBlock).join('')}
+    </article>
+  </section>`;
+}
+
+/* ============================================================
    РАСХОЖДЕНИЯ
    ============================================================ */
 async function viewDiff(){
@@ -428,6 +492,7 @@ const ROUTES = [
   [/^\/uak$/,               'uak',   viewUak],
   [/^\/dk$/,                'dk',    viewDk],
   [/^\/cards$/,             'cards', viewCards],
+  [/^\/guides$/,            'guides',viewGuides],
   [/^\/diff$/,              'cards', viewDiff],
   [/^\/docs$/,              'docs',  viewDocs],
   [/^\/doc\/([\w-]+)$/,     'docs',  (p,m)=>viewDoc(m[1])],
@@ -539,6 +604,11 @@ async function cmdSearch(q){
   }
   for (const d of idx){
     if ((d.title+' '+d.fullTitle).toLowerCase().includes(s)) out.push({sc:45,k:'',t:d.fullTitle||d.title,c:d.catName,href:'#/doc/'+d.id});
+  }
+  const g = await loadGuides();
+  for (const gd of g.guides){
+    const blob = JSON.stringify(gd).toLowerCase();
+    if (blob.includes(s)) out.push({sc:gd.title.toLowerCase().includes(s)?58:26,k:'',t:gd.title,c:'Памятка',href:'#/guides?g='+gd.id});
   }
   return out.sort((a,b)=>b.sc-a.sc).slice(0,24);
 }
