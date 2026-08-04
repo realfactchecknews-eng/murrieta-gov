@@ -373,6 +373,41 @@ def main():
         chunks += make_chunks(doc_id, title, cat, url, sections)
         print("%-16s %-34s %6d симв. %3d секц." % (doc_id, short[:34], nchars, len(sections)))
 
+    # Памятки написаны вручную и содержат уже сведённые выводы (в т.ч. конфликты
+    # «закон разрешает — правила запрещают»). Их обязательно класть в корпус ИИ:
+    # готовый вердикт надёжнее, чем надежда, что модель сама сведёт две нормы.
+    gp = os.path.join(OUT, "guides.json")
+    if os.path.exists(gp):
+        for g in json.load(io.open(gp, encoding="utf-8"))["guides"]:
+            for bi, b in enumerate(g.get("blocks", [])):
+                parts = []
+                if b.get("type") == "conflicts":
+                    for c in b["items"]:
+                        parts.append(
+                            "СИТУАЦИЯ: %s\nЧТО ГОВОРИТ ЗАКОН: %s\nЧТО ГОВОРЯТ ПРАВИЛА: %s\n"
+                            "ИТОГОВЫЙ ОТВЕТ: %s\nНАКАЗАНИЕ ПО ПРАВИЛАМ: %s"
+                            % (c["topic"], c["law"], c["rule"], c["verdict"], c.get("penalty", "—")))
+                elif b.get("type") == "prec":
+                    for p in b["items"]:
+                        parts.append("ПРЕЦЕДЕНТ %s — %s\n%s" % (p["num"], p["topic"], p["text"]))
+                elif b.get("type") == "cards":
+                    for c in b["items"]:
+                        parts.append("%s (%s): %s" % (c["name"], c["tag"], c["text"]))
+                elif b.get("type") == "table":
+                    parts.append("\n".join("%s — %s" % (k, v) for k, v in b["rows"]))
+                elif b.get("type") == "list":
+                    parts.append((b.get("title", "") + "\n" + "\n".join("• " + i for i in b["items"])).strip())
+                elif b.get("type") in ("warn", "note"):
+                    parts.append((b.get("title", "") + "\n" + b["text"]).strip())
+                for pi, txt in enumerate(parts):
+                    chunks.append({
+                        "id": "guide-%s#%d-%d" % (g["id"], bi, pi),
+                        "doc": "guide-" + g["id"], "docTitle": "Памятка: " + g["title"],
+                        "cat": "guide", "url": "", "heading": b.get("title", g["title"]),
+                        "text": txt,
+                    })
+        print("памятки добавлены в корпус ИИ")
+
     arts = parse_uak(os.path.join(RAW, "Уголовно-административный_кодекс.txt"))
     dk = parse_dk(os.path.join(RAW, "Дорожный_кодекс.txt"))
 
