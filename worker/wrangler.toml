@@ -17,7 +17,8 @@ FALLBACK_MODELS = "deepseek/deepseek-v4-flash-0731,mistralai/mistral-small-3.2-2
 
 # Кто может обращаться к Worker. Укажите адрес своего сайта.
 # Для локальной проверки добавьте http://localhost:8080
-ALLOWED_ORIGINS = "https://realfactchecknews-eng.github.io,http://localhost:8080"
+# Старый github.io-адрес оставлен: пока не переключился DNS, сайт открывается по нему.
+ALLOWED_ORIGINS = "https://zakonka.online,https://www.zakonka.online,https://realfactchecknews-eng.github.io,http://localhost:8080"
 
 # Показывается в статистике OpenRouter
-SITE_URL = "https://realfactchecknews-eng.github.io/murrieta-gov/"
+SITE_URL = "https://zakonka.online/"
