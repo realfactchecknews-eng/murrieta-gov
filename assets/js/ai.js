@@ -119,6 +119,17 @@ function retrieve(query, k=10, opts={}){
     }
     for (const n of nums) if (c.text.includes(n)) s += 14;
     for (const w of litWords) if (c.text.toLowerCase().includes(w)) s += 6;
+    /* Буст за совпадение с заголовком раздела — отдельно и сильнее, чем
+       совпадение с текстом. Слова типа «кодекса», «принципы» настолько
+       частотны по всему корпусу, что обычный IDF почти не отличает их
+       от шума, даже когда вопрос почти буквально повторяет название
+       главы («принципы процессуального кодекса» → «Глава VI Принципы
+       процессуального кодекса»). Заголовок — куда более точный сигнал,
+       чем совпадение где-то в тексте параграфа. */
+    if (c.heading){
+      const hl = c.heading.toLowerCase();
+      for (const w of litWords) if (hl.includes(w)) s += 12;
+    }
     if (/задерж|арест|миранд|обыск|допрос|сил/.test(ql) && c.doc==='pk') s += 1.6;
     /* Явное упоминание аббревиатуры («ПК», «УАК», «ЗОТ», «FIB»...) — сильный
        сигнал: утраивает уже найденную по теме релевантность внутри этого
@@ -270,7 +281,7 @@ AI.draftPetition = (description, formTitle) => callStructured(description, {
 
 AI.assessSituation = (description) => callStructured(description, {
   mode: 'assess', extra: {},
-  sections: [['verdict','ВЕРДИКТ'],['sides','РАЗБОР ПО СТОРОНАМ'],['penalty','ЧТО ГРОЗИТ'],['defense','ВОЗМОЖНЫЕ ВОЗРАЖЕНИЯ']],
+  sections: [['verdict','ВЕРДИКТ'],['sides','РАЗБОР ПО СТОРОНАМ'],['release','ОСНОВАНИЯ ДЛЯ ОСВОБОЖДЕНИЯ'],['penalty','ЧТО ГРОЗИТ'],['defense','ВОЗМОЖНЫЕ ВОЗРАЖЕНИЯ']],
 });
 
 /* ------------------------------------------------ markdown ---- */

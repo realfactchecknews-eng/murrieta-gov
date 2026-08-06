@@ -550,6 +550,7 @@ function viewAssess(){
     <div class="asg-result" id="asgResult" hidden>
       <div class="asg-card asg-card--verdict"><b>Вердикт</b><p id="asgVerdict"></p></div>
       <div class="asg-card"><b>Разбор по сторонам</b><p id="asgSides"></p></div>
+      <div class="asg-card asg-card--release" id="asgReleaseCard"><b>Основания для освобождения</b><p id="asgRelease"></p></div>
       <div class="asg-card"><b>Что грозит</b><p id="asgPenalty"></p></div>
       <div class="asg-card"><b>Возможные возражения</b><p id="asgDefense"></p></div>
     </div>
@@ -567,6 +568,10 @@ function bindAssess(){
       const r = await window.AI.assessSituation(desc);
       $('#asgVerdict').innerHTML = md(r.verdict || '—');
       $('#asgSides').innerHTML = md(r.sides || '—');
+      const releaseTxt = r.release || '—';
+      $('#asgRelease').innerHTML = md(releaseTxt);
+      const noViolation = /не\s+усматрива/i.test(releaseTxt);
+      $('#asgReleaseCard').classList.toggle('asg-card--flag', !noViolation && releaseTxt !== '—');
       $('#asgPenalty').innerHTML = md(r.penalty || '—');
       $('#asgDefense').innerHTML = md(r.defense || '—');
       result.hidden = false;
