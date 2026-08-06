@@ -105,6 +105,20 @@ async function viewHome(){
     ['ai','ИИ-помощник','#/ai','Задайте вопрос по законке или правилам обычным языком — ответ со ссылками на конкретные статьи и документы.','chat'],
   ];
 
+  const favs = window.Favorites.all();
+  const favBlock = favs.length ? `
+  <section class="sec">
+    <div class="sec__head rv"><div><h2 class="h2">Избранное</h2><p>Статьи, закреплённые для быстрого доступа — звёздочка на карточке статьи.</p></div></div>
+    <div class="chips">
+      ${favs.map(k=>{
+        const [doc,num] = k.split(':');
+        const a = (doc==='uak'?arts:dk).find(x=>x.num===num);
+        if (!a) return '';
+        return `<a class="chip" href="#/${doc}" data-fav-open="${doc}:${esc(num)}">${doc==='uak'?'УАК':'ДК'} ${esc(num)} — ${esc(a.title)}</a>`;
+      }).join('')}
+    </div>
+  </section>` : '';
+
   return `
   <section class="hero view">
     <span class="eyebrow rv">GTA 5 RP · Сервер №20 · Murrieta</span>
@@ -148,7 +162,8 @@ async function viewHome(){
           <p>${items.slice(0,4).map(d=>esc(d.title)).join(' · ')}${items.length>4?' и др.':''}</p>
         </a>`;}).join('')}
     </div>
-  </section>`;
+  </section>
+  ${favBlock}`;
 }
 
 /* ============================================================
@@ -228,6 +243,7 @@ function renderUak(){
             ${ic.length?`<span class="tag">${ic[0]} IC</span>`:''}
           </div>
         </div>
+        <button class="art__fav${window.Favorites?.has('uak:'+a.num)?' is-on':''}" data-fav="uak:${esc(a.num)}" title="В избранное" type="button">★</button>
         <span class="art__chev">${chev}</span>
       </div>
       <div class="art__drop"><div><div class="art__inner">
@@ -267,7 +283,7 @@ function renderDk(){
   const rows = DATA.traffic.filter(a=> !q || a.num.startsWith(q) || (a.title+' '+a.sanction).toLowerCase().includes(q));
   if(!rows.length){ list.innerHTML = `<div class="empty"><b>Ничего не найдено</b></div>`; return; }
   list.innerHTML = rows.map(a=>`
-    <article class="art">
+    <article class="art" data-num="${esc(a.num)}">
       <div class="art__top">
         <span class="art__num">ст. ${esc(a.num)}</span>
         <div class="art__body">
@@ -281,6 +297,7 @@ function renderDk(){
             <span class="tag">${esc((a.chapter||'').replace(/^Глава\s*/,'гл. '))}</span>
           </div>
         </div>
+        <button class="art__fav${window.Favorites?.has('dk:'+a.num)?' is-on':''}" data-fav="dk:${esc(a.num)}" title="В избранное" type="button">★</button>
         <span class="art__chev">${chev}</span>
       </div>
       <div class="art__drop"><div><div class="art__inner">
@@ -444,6 +461,16 @@ async function viewForms(params){
       <p>Официальные формы подачи исков, жалоб, ходатайств и обращений — заполните поля слева,
          готовый текст соберётся справа. Формат и структура — с портала судебной системы.</p></div></div>
 
+    <div class="fg-char">
+      <label class="fg" style="flex:1;margin:0"><span>Персонаж — подставит паспорт, телефон и почту в поля заявителя</span>
+        <select class="field-i" id="fgChar">
+          <option value="">— не выбран —</option>
+          ${window.Characters.all().map(c=>`<option value="${c.id}" ${c.id===window.Characters.activeId()?' selected':''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </label>
+      <button class="btn btn--ghost" id="fgCharManage" type="button" style="padding:10px 14px;font-size:13px">Персонажи</button>
+    </div>
+
     <div class="formgen">
       <aside class="formgen__nav">${groupNav}</aside>
       <div class="formgen__body">
@@ -471,7 +498,10 @@ async function viewForms(params){
       <div class="formgen__preview">
         <div class="fg-pv-head">
           <b>Готовый текст</b>
-          <button class="btn btn--ghost" id="fgCopy" style="padding:7px 13px;font-size:12.5px">Скопировать</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn--ghost" id="fgCopy" style="padding:7px 13px;font-size:12.5px">Скопировать</button>
+            <button class="btn btn--ghost" id="fgDownload" style="padding:7px 13px;font-size:12.5px">Скачать .txt</button>
+          </div>
         </div>
         <pre class="fg-pv" id="fgPreview">${esc(renderFormTemplate(form, formState.values))}</pre>
       </div>
@@ -487,6 +517,38 @@ function bindForms(data, form){
       formState.values[el.dataset.k] = el.value;
       rerender();
     });
+  });
+
+  const applyCharacter = (charId) => {
+    window.Characters.setActive(charId);
+    const c = window.Characters.all().find(x=>x.id===charId);
+    if (!c) return;
+    for (const f of form.fields){
+      const prop = window.CHAR_FIELD_MAP[f.key];
+      if (!prop || !c[prop]) continue;
+      formState.values[f.key] = c[prop];
+      const el = document.querySelector(`.field-i[data-k="${f.key}"]`);
+      if (el) el.value = c[prop];
+    }
+    rerender();
+  };
+  $('#fgChar')?.addEventListener('change', e=>{ if (e.target.value) applyCharacter(e.target.value); else window.Characters.setActive(''); });
+  $('#fgCharManage')?.addEventListener('click', ()=>window.openCharacterModal());
+  document.addEventListener('characters:changed', ()=>{
+    const sel = $('#fgChar'); if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">— не выбран —</option>` +
+      window.Characters.all().map(c=>`<option value="${c.id}"${c.id===cur?' selected':''}>${esc(c.name)}</option>`).join('');
+  });
+  if (window.Characters.activeId()) applyCharacter(window.Characters.activeId());
+
+  $('#fgDownload')?.addEventListener('click', ()=>{
+    const blob = new Blob([preview.textContent], {type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (form.title||'zayavlenie').replace(/[^\wа-яё -]+/gi,'').trim().slice(0,60) + '.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
   });
 
   const aiGo = $('#fgAiGo'), aiInput = $('#fgAiInput'), aiHint = $('#fgAiHint'), aiAnalysis = $('#fgAiAnalysis');
@@ -830,6 +892,26 @@ function boot(){
     bar.style.width = (h>0 ? (scrollY/h*100) : 0) + '%';
   };
   addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  /* избранное — делегирование, разметка перерисовывается при каждом поиске */
+  /* capture:true — должен сработать раньше, чем bubble-обработчик .art__top,
+     который разворачивает статью, иначе клик по звезде ещё и раскрывает карточку. */
+  document.addEventListener('click', e=>{
+    const btn = e.target.closest('.art__fav'); if (!btn) return;
+    e.stopPropagation();
+    const on = window.Favorites.toggle(btn.dataset.fav);
+    btn.classList.toggle('is-on', on);
+  }, true);
+  document.addEventListener('click', e=>{
+    const chip = e.target.closest('[data-fav-open]'); if (!chip) return;
+    const [doc, num] = chip.dataset.favOpen.split(':');
+    if (doc === 'uak') window.__openArt = num;
+  });
+
+  /* профиль */
+  updateProfileBadge();
+  $('#profileBtn').addEventListener('click', openProfileModal);
+  if (!Profile.get()?.faction) setTimeout(openProfileModal, 900);
 
   /* поиск */
   $('#openSearch').addEventListener('click', cmdOpen);

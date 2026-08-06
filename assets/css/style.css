@@ -256,6 +256,9 @@ kbd{
 .art__body{flex:1;min-width:0}
 .art__title{font-size:14.5px;font-weight:550;line-height:1.5}
 .art__meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;align-items:center}
+.art__fav{flex:none;background:none;border:0;font-size:17px;line-height:1;color:var(--line-2);cursor:pointer;padding:2px;margin-top:1px;transition:color .15s,transform .15s}
+.art__fav:hover{color:var(--tx-3);transform:scale(1.15)}
+.art__fav.is-on{color:var(--acc)}
 .art__chev{flex:none;color:var(--tx-3);transition:transform .32s var(--ease);margin-top:3px}
 .art.is-open .art__chev{transform:rotate(180deg);color:var(--acc)}
 .art__drop{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s var(--ease)}
@@ -461,10 +464,12 @@ select.field-i{appearance:none;cursor:pointer}
   flex:1;margin:0;overflow-y:auto;white-space:pre-wrap;font-family:"JetBrains Mono",monospace;
   font-size:12.5px;line-height:1.65;color:#d5d5d9;background:var(--surface);border-radius:10px;padding:14px 16px;
 }
+.fg-char{display:flex;gap:12px;align-items:flex-end;margin-bottom:16px}
 @media (max-width:1040px){
   .formgen{grid-template-columns:1fr}
   .formgen__nav{position:static;flex-direction:row;flex-wrap:wrap;gap:12px}
   .formgen__preview{position:static;max-height:420px}
+  .fg-char{flex-direction:column;align-items:stretch}
 }
 
 /* ------------------------------------------------ cmd+k ------ */
@@ -492,6 +497,31 @@ select.field-i{appearance:none;cursor:pointer}
 .cres__c{font-size:11px;color:var(--tx-3);flex:none}
 .cmdk__foot{padding:10px 18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--tx-3);display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 .cmdk__empty{padding:34px 18px;text-align:center;color:var(--tx-3);font-size:14px}
+
+/* ------------------------------------------------ модалка ----- */
+.modal{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:20px}
+.modal__back{position:absolute;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(5px);animation:fadeIn .22s}
+.modal__box{
+  position:relative;width:min(460px,100%);max-height:86vh;overflow-y:auto;background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:0 32px 80px -20px rgba(0,0,0,.9);
+  animation:popIn .28s var(--ease);
+}
+.modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.modal__head b{font-size:15px}
+.modal__esc{background:none;border:1px solid var(--line-2);border-radius:8px;width:28px;height:28px;color:var(--tx-3);cursor:pointer;flex:none}
+.modal__esc:hover{color:var(--tx);border-color:var(--line-2)}
+.modal__body{padding:18px}
+.modal__hint{font-size:13px;color:var(--tx-2);margin:0 0 14px;line-height:1.5}
+.btn-k.is-set{border-color:rgba(255,123,46,.4);color:var(--acc)}
+
+.char-list{display:flex;flex-direction:column;gap:8px;max-height:44vh;overflow-y:auto}
+.char-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px}
+.char-row__main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.char-row__main b{font-size:13.5px}
+.char-row__main span{font-size:11.5px;color:var(--tx-3)}
+.char-row__act{display:flex;gap:6px;flex:none}
+.btn-mini{font-size:11.5px;padding:5px 9px;border-radius:7px;background:var(--surface-3);border:1px solid var(--line-2);color:var(--tx-2);cursor:pointer}
+.btn-mini:hover{color:var(--tx)}
 
 /* ------------------------------------------------ ИИ --------- */
 .chat{display:grid;grid-template-rows:1fr auto;height:calc(100vh - 190px);min-height:460px;

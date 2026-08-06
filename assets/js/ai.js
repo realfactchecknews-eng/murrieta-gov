@@ -16,6 +16,15 @@ const isConfigured = () => /^https:\/\/.+\.workers\.dev|^https?:\/\//.test(worke
 const AI = { chunks:null, idf:null, history:[], busy:false };
 window.AI = AI;
 
+/* Память чата: держим последние сообщения в localStorage, чтобы диалог
+   переживал перезагрузку страницы и переход между разделами. В запрос
+   на сервер всё равно уходит короткий хвост (см. .slice(-6) ниже) —
+   тут хранится более длинная лента для отображения в интерфейсе. */
+const CHAT_KEY = 'murrieta_chat_log';
+function loadChatLog(){ try{ return JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch{ return []; } }
+function saveChatLog(list){ localStorage.setItem(CHAT_KEY, JSON.stringify(list.slice(-60))); }
+function clearChatLog(){ localStorage.removeItem(CHAT_KEY); }
+
 const $a  = (s,r=document)=>r.querySelector(s);
 const $$a = (s,r=document)=>[...r.querySelectorAll(s)];
 const escA = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -241,7 +250,7 @@ async function callStructured(description, {mode, extra, sections}){
 
   const res = await fetch(workerUrl()+'/chat', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ question:description, context, mode, ...extra })
+    body: JSON.stringify({ question:description, context, mode, profile: window.Profile?.contextLine()||'', ...extra })
   });
   if (!res.ok){
     const t = await res.text().catch(()=> '');
@@ -356,7 +365,6 @@ AI.view = function(){
 AI.bind = function(){
   const log = $a('#log'), q = $a('#q'), send = $a('#send');
   if (!log) return;
-  AI.history = [];
 
   const grow = ()=>{ q.style.height='auto'; q.style.height=Math.min(q.scrollHeight,150)+'px'; send.disabled = !q.value.trim() || AI.busy; };
   q.addEventListener('input', grow);
@@ -364,8 +372,20 @@ AI.bind = function(){
   send.addEventListener('click', ask);
   $$a('.sugg button').forEach(b=>b.addEventListener('click',()=>{ q.value=b.dataset.q; grow(); ask(); }));
 
-  $a('#clr')?.addEventListener('click',e=>{ e.preventDefault(); AI.history=[];
+  $a('#clr')?.addEventListener('click',e=>{ e.preventDefault(); AI.history=[]; clearChatLog();
     log.innerHTML = `<div class="msg msg--ai"><span class="msg__av">AI</span><div class="msg__b"><p>История очищена. Спрашивайте.</p></div></div>`; });
+
+  /* Восстанавливаем сохранённую переписку — рендерим прямо в лог поверх
+     вступительного сообщения, а не поверх ai.busy-логики. */
+  const saved = loadChatLog();
+  AI.history = saved.map(m=>({role:m.role, content:m.content}));
+  for (const m of saved){
+    const el = document.createElement('div');
+    el.className = 'msg msg--'+(m.role==='user'?'me':'ai');
+    el.innerHTML = `<span class="msg__av">${m.role==='user'?'ВЫ':'AI'}</span><div class="msg__b">${m.role==='user'?`<p>${escA(m.content)}</p>`:md(m.content)}</div>`;
+    log.appendChild(el);
+  }
+  if (saved.length) log.scrollTop = log.scrollHeight;
 
   $a('#cfg')?.addEventListener('click',e=>{ e.preventDefault();
     const cur = localStorage.getItem('murrieta_worker') || '';
@@ -421,7 +441,7 @@ AI.bind = function(){
 
       const res = await fetch(workerUrl()+'/chat', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ question:text, context, history:AI.history.slice(-6) })
+        body: JSON.stringify({ question:text, context, history:AI.history.slice(-6), profile: window.Profile?.contextLine()||'' })
       });
       if (!res.ok){
         const t = await res.text().catch(()=> '');
@@ -463,6 +483,7 @@ AI.bind = function(){
         box.appendChild(s);
       }
       AI.history.push({role:'user',content:text},{role:'assistant',content:acc});
+      saveChatLog(AI.history);
       log.scrollTop = log.scrollHeight;
     }catch(err){
       box.innerHTML = `<p style="color:#ff8f6b">Ошибка: ${escA(err.message)}</p>
