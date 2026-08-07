@@ -216,3 +216,30 @@ const Favorites = {
 };
 window.Favorites = Favorites;
 
+/* -------------------------------------------------- избранные ответы ИИ */
+const FavAnswers = {
+  all(){ try{ return JSON.parse(localStorage.getItem('murrieta_fav_answers')||'[]'); }catch{ return []; } },
+  save(list){ localStorage.setItem('murrieta_fav_answers', JSON.stringify(list)); },
+  add(question, answer){
+    const item = { id:'fq'+Date.now()+Math.random().toString(36).slice(2,6), question, answer, ts:Date.now() };
+    const list = FavAnswers.all(); list.push(item); FavAnswers.save(list);
+    return item;
+  },
+  remove(id){ FavAnswers.save(FavAnswers.all().filter(x=>x.id!==id)); },
+};
+window.FavAnswers = FavAnswers;
+
+/* -------------------------------------------------- кастомные памятки -- */
+const CustomGuides = {
+  all(){ try{ return JSON.parse(localStorage.getItem('murrieta_custom_guides')||'[]'); }catch{ return []; } },
+  save(list){ localStorage.setItem('murrieta_custom_guides', JSON.stringify(list)); },
+  add(title, items){
+    const g = { id:'g'+Date.now()+Math.random().toString(36).slice(2,6), title, items, ts:Date.now() };
+    const list = CustomGuides.all(); list.push(g); CustomGuides.save(list);
+    return g;
+  },
+  remove(id){ CustomGuides.save(CustomGuides.all().filter(x=>x.id!==id)); },
+  get(id){ return CustomGuides.all().find(x=>x.id===id); },
+};
+window.CustomGuides = CustomGuides;
+

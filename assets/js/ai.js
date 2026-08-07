@@ -16,14 +16,43 @@ const isConfigured = () => /^https:\/\/.+\.workers\.dev|^https?:\/\//.test(worke
 const AI = { chunks:null, idf:null, history:[], busy:false };
 window.AI = AI;
 
-/* Память чата: держим последние сообщения в localStorage, чтобы диалог
-   переживал перезагрузку страницы и переход между разделами. В запрос
-   на сервер всё равно уходит короткий хвост (см. .slice(-6) ниже) —
-   тут хранится более длинная лента для отображения в интерфейсе. */
-const CHAT_KEY = 'murrieta_chat_log';
-function loadChatLog(){ try{ return JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch{ return []; } }
-function saveChatLog(list){ localStorage.setItem(CHAT_KEY, JSON.stringify(list.slice(-60))); }
-function clearChatLog(){ localStorage.removeItem(CHAT_KEY); }
+/* Память чата: несколько независимых тредов в localStorage, каждый со
+   своей лентой сообщений — диалог переживает перезагрузку страницы и
+   переход между разделами. В запрос на сервер уходит короткий хвост
+   активного треда (см. .slice(-6) ниже), полная лента хранится только
+   для отображения в интерфейсе. */
+const THREADS_KEY = 'murrieta_threads';
+const ACTIVE_THREAD_KEY = 'murrieta_active_thread';
+const LEGACY_CHAT_KEY = 'murrieta_chat_log';
+
+function autoTitle(messages){
+  const u = messages.find(m=>m.role==='user');
+  if (!u) return 'Новый чат';
+  return u.content.length>42 ? u.content.slice(0,42)+'…' : u.content;
+}
+function newThread(){ return { id:'t'+Date.now()+Math.random().toString(36).slice(2,6), title:'Новый чат', messages:[] }; }
+function saveThreads(list){ localStorage.setItem(THREADS_KEY, JSON.stringify(list.slice(-30))); }
+function loadThreads(){
+  try{
+    let list = JSON.parse(localStorage.getItem(THREADS_KEY)||'null');
+    if (list) return list;
+  }catch{}
+  /* миграция со старой версии, где хранился один общий лог без тредов */
+  let legacy = [];
+  try{ legacy = JSON.parse(localStorage.getItem(LEGACY_CHAT_KEY)||'[]'); }catch{}
+  const list = legacy.length ? [{ id:'t0', title:autoTitle(legacy), messages:legacy }] : [];
+  saveThreads(list);
+  localStorage.removeItem(LEGACY_CHAT_KEY);
+  return list;
+}
+function ensureActiveThread(list){
+  const id = localStorage.getItem(ACTIVE_THREAD_KEY);
+  let t = list.find(x=>x.id===id);
+  if (!t) t = list[list.length-1];
+  if (!t){ t = newThread(); list.push(t); saveThreads(list); }
+  localStorage.setItem(ACTIVE_THREAD_KEY, t.id);
+  return t;
+}
 
 const $a  = (s,r=document)=>r.querySelector(s);
 const $$a = (s,r=document)=>[...r.querySelectorAll(s)];
@@ -336,25 +365,28 @@ AI.view = function(){
 
     <div class="sugg">${SUGG.map(s=>`<button data-q="${escA(s)}">${escA(s)}</button>`).join('')}</div>
 
-    <div class="chat">
-      <div class="chat__log" id="log">
-        <div class="msg msg--ai">
-          <span class="msg__av">AI</span>
-          <div class="msg__b"><p>Спрашивайте обычным языком — например «за что можно задержать по 17.6 и какой залог»
-          или «что делать, если задержанный требует адвоката».</p>
-          <p>Отвечаю только по документам с форума и ссылаюсь на конкретные статьи. Если чего-то в базе нет — так и скажу.</p></div>
+    <div class="chat-wrap">
+      <aside class="chat-side" id="chatSide"></aside>
+      <div class="chat">
+        <div class="chat__log" id="log">
+          <div class="msg msg--ai">
+            <span class="msg__av">AI</span>
+            <div class="msg__b"><p>Спрашивайте обычным языком — например «за что можно задержать по 17.6 и какой залог»
+            или «что делать, если задержанный требует адвоката».</p>
+            <p>Отвечаю только по документам с форума и ссылаюсь на конкретные статьи. Если чего-то в базе нет — так и скажу.</p></div>
+          </div>
         </div>
-      </div>
-      <div class="chat__in">
-        <div class="chat__row">
-          <textarea id="q" rows="1" placeholder="Ваш вопрос по законке или правилам…"></textarea>
-          <button class="chat__send" id="send" title="Отправить" disabled>
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
-          </button>
-        </div>
-        <div class="chat__hint">
-          <span>Enter — отправить, Shift+Enter — новая строка</span>
-          <span><a href="#" id="cfg" style="color:var(--acc)">Настроить</a> · <a href="#" id="clr" style="color:var(--tx-3)">Очистить</a></span>
+        <div class="chat__in">
+          <div class="chat__row">
+            <textarea id="q" rows="1" placeholder="Ваш вопрос по законке или правилам…"></textarea>
+            <button class="chat__send" id="send" title="Отправить" disabled>
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+          <div class="chat__hint">
+            <span>Enter — отправить, Shift+Enter — новая строка</span>
+            <span><a href="#" id="cfg" style="color:var(--acc)">Настроить</a> · <a href="#" id="clr" style="color:var(--tx-3)">Очистить чат</a></span>
+          </div>
         </div>
       </div>
     </div>
@@ -363,8 +395,80 @@ AI.view = function(){
 
 /* ------------------------------------------------ логика ------- */
 AI.bind = function(){
-  const log = $a('#log'), q = $a('#q'), send = $a('#send');
+  const log = $a('#log'), q = $a('#q'), send = $a('#send'), side = $a('#chatSide');
   if (!log) return;
+
+  let threads = loadThreads();
+  let active = ensureActiveThread(threads);
+  AI.history = active.messages.map(m=>({role:m.role, content:m.content}));
+
+  function renderSide(){
+    side.innerHTML = `
+      <button class="btn btn--main" id="newChat" type="button" style="width:100%;margin-bottom:10px;padding:9px;font-size:13px">+ Новый чат</button>
+      <div class="chat-side__list">
+        ${threads.slice().reverse().map(t=>`
+          <div class="chat-side__item${t.id===active.id?' is-on':''}" data-id="${t.id}">
+            <span>${escA(t.title||'Новый чат')}</span>
+            <button class="chat-side__del" data-del="${t.id}" title="Удалить чат" type="button">✕</button>
+          </div>`).join('') || '<p class="modal__hint" style="padding:0 2px">Чатов пока нет.</p>'}
+      </div>`;
+    side.querySelector('#newChat').addEventListener('click', ()=>{
+      const t = newThread();
+      threads.push(t); saveThreads(threads);
+      localStorage.setItem(ACTIVE_THREAD_KEY, t.id);
+      active = t; AI.history = [];
+      renderLog(); renderSide();
+    });
+    side.querySelectorAll('.chat-side__item').forEach(row=>{
+      row.addEventListener('click', e=>{
+        if (e.target.closest('[data-del]')) return;
+        const t = threads.find(x=>x.id===row.dataset.id);
+        if (!t || t===active) return;
+        active = t; AI.history = active.messages.map(m=>({role:m.role,content:m.content}));
+        localStorage.setItem(ACTIVE_THREAD_KEY, active.id);
+        renderLog(); renderSide();
+      });
+    });
+    side.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
+        const id = btn.dataset.del;
+        threads = threads.filter(t=>t.id!==id);
+        if (active.id===id){
+          active = threads[threads.length-1] || newThread();
+          if (!threads.includes(active)) threads.push(active);
+          localStorage.setItem(ACTIVE_THREAD_KEY, active.id);
+          AI.history = active.messages.map(m=>({role:m.role,content:m.content}));
+          renderLog();
+        }
+        saveThreads(threads);
+        renderSide();
+      });
+    });
+  }
+
+  function renderLog(){
+    log.innerHTML = `<div class="msg msg--ai"><span class="msg__av">AI</span><div class="msg__b"><p>Спрашивайте обычным языком — например «за что можно задержать по 17.6 и какой залог»
+      или «что делать, если задержанный требует адвоката».</p>
+      <p>Отвечаю только по документам с форума и ссылаюсь на конкретные статьи. Если чего-то в базе нет — так и скажу.</p></div></div>`;
+    let lastQ = '';
+    for (const m of active.messages){
+      if (m.role==='user'){ bubble('user', `<p>${escA(m.content)}</p>`); lastQ = m.content; }
+      else { const box = bubble('ai', md(m.content)); addFavButton(box, lastQ, m.content); }
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addFavButton(box, question, answer){
+    const b = document.createElement('button');
+    b.className = 'msg__fav'; b.type = 'button'; b.title = 'Сохранить ответ в избранное';
+    b.textContent = '★ В избранное';
+    b.addEventListener('click', ()=>{
+      window.FavAnswers.add(question||'Вопрос без текста', answer);
+      b.textContent = '✓ Сохранено'; b.disabled = true;
+    });
+    box.appendChild(b);
+  }
 
   const grow = ()=>{ q.style.height='auto'; q.style.height=Math.min(q.scrollHeight,150)+'px'; send.disabled = !q.value.trim() || AI.busy; };
   q.addEventListener('input', grow);
@@ -372,20 +476,12 @@ AI.bind = function(){
   send.addEventListener('click', ask);
   $$a('.sugg button').forEach(b=>b.addEventListener('click',()=>{ q.value=b.dataset.q; grow(); ask(); }));
 
-  $a('#clr')?.addEventListener('click',e=>{ e.preventDefault(); AI.history=[]; clearChatLog();
-    log.innerHTML = `<div class="msg msg--ai"><span class="msg__av">AI</span><div class="msg__b"><p>История очищена. Спрашивайте.</p></div></div>`; });
+  $a('#clr')?.addEventListener('click',e=>{ e.preventDefault();
+    active.messages = []; active.title = 'Новый чат'; AI.history = [];
+    saveThreads(threads); renderLog(); renderSide(); });
 
-  /* Восстанавливаем сохранённую переписку — рендерим прямо в лог поверх
-     вступительного сообщения, а не поверх ai.busy-логики. */
-  const saved = loadChatLog();
-  AI.history = saved.map(m=>({role:m.role, content:m.content}));
-  for (const m of saved){
-    const el = document.createElement('div');
-    el.className = 'msg msg--'+(m.role==='user'?'me':'ai');
-    el.innerHTML = `<span class="msg__av">${m.role==='user'?'ВЫ':'AI'}</span><div class="msg__b">${m.role==='user'?`<p>${escA(m.content)}</p>`:md(m.content)}</div>`;
-    log.appendChild(el);
-  }
-  if (saved.length) log.scrollTop = log.scrollHeight;
+  renderSide();
+  renderLog();
 
   $a('#cfg')?.addEventListener('click',e=>{ e.preventDefault();
     const cur = localStorage.getItem('murrieta_worker') || '';
@@ -482,8 +578,12 @@ AI.bind = function(){
           uniq.map(c=>`<a href="#/doc/${c.doc}">${escA(c.docTitle)}</a>`).join('');
         box.appendChild(s);
       }
+      addFavButton(box, text, acc);
       AI.history.push({role:'user',content:text},{role:'assistant',content:acc});
-      saveChatLog(AI.history);
+      active.messages.push({role:'user',content:text},{role:'assistant',content:acc});
+      if (active.messages.length===2) active.title = autoTitle(active.messages);
+      saveThreads(threads);
+      renderSide();
       log.scrollTop = log.scrollHeight;
     }catch(err){
       box.innerHTML = `<p style="color:#ff8f6b">Ошибка: ${escA(err.message)}</p>

@@ -108,7 +108,10 @@ async function viewHome(){
   const favs = window.Favorites.all();
   const favBlock = favs.length ? `
   <section class="sec">
-    <div class="sec__head rv"><div><h2 class="h2">Избранное</h2><p>Статьи, закреплённые для быстрого доступа — звёздочка на карточке статьи.</p></div></div>
+    <div class="sec__head rv">
+      <div><h2 class="h2">Избранное</h2><p>Статьи, закреплённые для быстрого доступа — звёздочка на карточке статьи.</p></div>
+      <a class="btn btn--ghost" href="#/favorites">Собрать памятку ${arrow}</a>
+    </div>
     <div class="chips">
       ${favs.map(k=>{
         const [doc,num] = k.split(':');
@@ -647,6 +650,151 @@ function bindAssess(){
 }
 
 /* ============================================================
+   ИЗБРАННОЕ И КАСТОМНЫЕ ПАМЯТКИ
+   ============================================================ */
+function resolveFavArticles(){
+  return window.Favorites.all().map(k=>{
+    const [doc, num] = k.split(':');
+    const src = doc==='uak' ? DATA.articles : DATA.traffic;
+    const a = src?.find(x=>x.num===num);
+    return a ? {doc, num, title:a.title, sanction:a.sanction} : null;
+  }).filter(Boolean);
+}
+
+function guideItemBlock(it){
+  if (it.type === 'article'){
+    const src = it.doc==='uak' ? DATA.articles : DATA.traffic;
+    const a = src?.find(x=>x.num===it.num);
+    if (!a) return '';
+    return `<div class="gb gb--note"><b class="gb__h">${it.doc==='uak'?'УАК':'ДК'} ${esc(it.num)} — ${esc(a.title)}</b><p>${esc(a.sanction||'Санкция не предусмотрена')}</p></div>`;
+  }
+  const a = window.FavAnswers.all().find(x=>x.id===it.id);
+  if (!a) return '';
+  return `<div class="gb gb--note"><b class="gb__h">${esc(a.question)}</b><p>${esc(a.answer)}</p></div>`;
+}
+function guideItemText(it){
+  if (it.type === 'article'){
+    const src = it.doc==='uak' ? DATA.articles : DATA.traffic;
+    const a = src?.find(x=>x.num===it.num);
+    if (!a) return '';
+    return `${it.doc==='uak'?'УАК':'ДК'} ${it.num} — ${a.title}\n${a.sanction||'Санкция не предусмотрена'}`;
+  }
+  const a = window.FavAnswers.all().find(x=>x.id===it.id);
+  return a ? `${a.question}\n${a.answer}` : '';
+}
+
+async function viewFavorites(){
+  await Promise.all([loadArticles(), loadTraffic()]);
+  const favArts = resolveFavArticles();
+  const favAns = window.FavAnswers.all();
+  const guides = window.CustomGuides.all();
+
+  return `
+  <section class="sec view">
+    <div class="sec__head"><div><h2 class="h2">Избранное и памятки</h2>
+      <p>Статьи (звёздочка на карточке статьи) и ответы ИИ (кнопка под ответом в чате), которые вы сохранили —
+         выберите нужные и соберите из них свою памятку.</p></div></div>
+
+    <div class="fav-cols">
+      <div>
+        <h3 class="h3" style="margin-bottom:10px">Статьи (${favArts.length})</h3>
+        <div class="fav-list">
+          ${favArts.length ? favArts.map(a=>`
+            <label class="fav-row">
+              <input type="checkbox" data-pick="article:${a.doc}:${esc(a.num)}">
+              <span><b>${a.doc==='uak'?'УАК':'ДК'} ${esc(a.num)}</b> — ${esc(a.title)}</span>
+            </label>`).join('') : '<p class="modal__hint">Пока нет — нажимайте ★ на карточках статей УАК/ДК.</p>'}
+        </div>
+
+        <h3 class="h3" style="margin:20px 0 10px">Ответы ИИ (${favAns.length})</h3>
+        <div class="fav-list">
+          ${favAns.length ? favAns.map(a=>`
+            <label class="fav-row">
+              <input type="checkbox" data-pick="answer:${a.id}">
+              <span><b>${esc(a.question.slice(0,70))}</b></span>
+              <button class="btn-mini" data-del-ans="${a.id}" type="button">Удалить</button>
+            </label>`).join('') : '<p class="modal__hint">Пока нет — нажимайте «★ В избранное» под ответом ИИ в чате.</p>'}
+        </div>
+      </div>
+
+      <div class="fav-build">
+        <h3 class="h3">Собрать памятку</h3>
+        <label class="fg"><span>Название памятки</span>
+          <input class="field-i" id="favGuideTitle" type="text" placeholder="Например: Задержание — шпаргалка"></label>
+        <button class="btn btn--main" id="favGuideMake" type="button" style="margin-top:10px;padding:9px 16px;font-size:13px">Собрать из выбранного</button>
+
+        <h3 class="h3" style="margin-top:24px">Мои памятки (${guides.length})</h3>
+        <div id="myGuidesList">
+          ${guides.length ? guides.map(g=>`
+            <div class="char-row" data-gid="${g.id}">
+              <div class="char-row__main"><b>${esc(g.title)}</b><span>${g.items.length} пункт(ов)</span></div>
+              <div class="char-row__act">
+                <button class="btn-mini" data-open="${g.id}" type="button">Открыть</button>
+                <button class="btn-mini" data-delg="${g.id}" type="button">Удалить</button>
+              </div>
+            </div>`).join('') : '<p class="modal__hint">Пока нет ни одной памятки.</p>'}
+        </div>
+      </div>
+    </div>
+
+    <div id="myGuideView"></div>
+  </section>`;
+}
+
+function bindFavorites(){
+  $('#favGuideMake')?.addEventListener('click', ()=>{
+    const title = $('#favGuideTitle').value.trim();
+    if (!title){ toast('Укажите название памятки'); return; }
+    const picked = $$('[data-pick]:checked').map(el=>{
+      const [type, a, b] = el.dataset.pick.split(':');
+      return type==='article' ? {type, doc:a, num:b} : {type, id:a};
+    });
+    if (!picked.length){ toast('Выберите хотя бы один пункт'); return; }
+    window.CustomGuides.add(title, picked);
+    toast('Памятка собрана');
+    router();
+  });
+  $$('[data-del-ans]').forEach(btn=>btn.addEventListener('click', ()=>{
+    window.FavAnswers.remove(btn.dataset.delAns); router();
+  }));
+  $$('[data-delg]').forEach(btn=>btn.addEventListener('click', ()=>{
+    window.CustomGuides.remove(btn.dataset.delg); $('#myGuideView').innerHTML=''; router();
+  }));
+  $$('[data-open]').forEach(btn=>btn.addEventListener('click', ()=>{
+    const g = window.CustomGuides.get(btn.dataset.open);
+    if (!g) return;
+    const view = $('#myGuideView');
+    view.innerHTML = `
+      <article class="guide rv" style="margin-top:22px">
+        <div class="guide__head">
+          <span class="card__ico">${ico('scale',20)}</span>
+          <div><h3 class="h2" style="font-size:22px">${esc(g.title)}</h3>
+          <p class="lead" style="font-size:13.5px;margin-top:6px">Кастомная памятка · ${g.items.length} пункт(ов)</p></div>
+        </div>
+        ${g.items.map(guideItemBlock).join('')}
+        <div class="fg-ai__row" style="margin-top:16px">
+          <button class="btn btn--ghost" id="myGuideCopy" type="button" style="padding:8px 14px;font-size:12.5px">Скопировать текст</button>
+          <button class="btn btn--ghost" id="myGuideDownload" type="button" style="padding:8px 14px;font-size:12.5px">Скачать .txt</button>
+        </div>
+      </article>`;
+    view.scrollIntoView({behavior:'smooth', block:'start'});
+    const plain = g.title + '\n\n' + g.items.map(guideItemText).filter(Boolean).join('\n\n');
+    $('#myGuideCopy').addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(plain); toast('Скопировано'); }
+      catch{ toast('Не удалось скопировать'); }
+    });
+    $('#myGuideDownload').addEventListener('click', ()=>{
+      const blob = new Blob([plain], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = g.title.replace(/[^\wа-яё -]+/gi,'').trim().slice(0,60) + '.txt';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    });
+  }));
+}
+
+/* ============================================================
    ДОКУМЕНТЫ
    ============================================================ */
 async function viewDocs(params){
@@ -725,6 +873,7 @@ const ROUTES = [
   [/^\/guides$/,            'guides',viewGuides],
   [/^\/forms$/,             'forms', viewForms],
   [/^\/assess$/,            'assess',viewAssess],
+  [/^\/favorites$/,         'favorites',viewFavorites],
   [/^\/docs$/,              'docs',  viewDocs],
   [/^\/doc\/([\w-]+)$/,     'docs',  (p,m)=>viewDoc(m[1])],
   [/^\/ai$/,                'ai',    ()=>window.AI.view()],
@@ -786,6 +935,7 @@ function bindView(path){
     bindForms(DATA.forms, form);
   }
   if (path === '/assess') bindAssess();
+  if (path === '/favorites') bindFavorites();
 }
 function rebindArts(){
   $$('.art__top').forEach(t=>{
