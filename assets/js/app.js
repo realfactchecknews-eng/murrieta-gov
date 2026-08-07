@@ -652,14 +652,40 @@ function bindAssess(){
 /* ============================================================
    ИЗБРАННОЕ И КАСТОМНЫЕ ПАМЯТКИ
    ============================================================ */
-function resolveFavArticles(){
-  return window.Favorites.all().map(k=>{
-    const [doc, num] = k.split(':');
-    const src = doc==='uak' ? DATA.articles : DATA.traffic;
-    const a = src?.find(x=>x.num===num);
-    return a ? {doc, num, title:a.title, sanction:a.sanction} : null;
-  }).filter(Boolean);
+/* Ключ избранного — либо "doc:num" (статья УАК/ДК из articles.json/traffic.json,
+   как раньше), либо "section:docId:index" (произвольный раздел любого другого
+   НПА — закона, устава, прецедента — раскрытый через общий вьюер /doc/:id). */
+function parseFavKey(k){
+  const parts = k.split(':');
+  if (parts[0] === 'section') return { kind:'section', doc:parts[1], idx:Number(parts[2]) };
+  return { kind:'article', doc:parts[0], num:parts[1] };
 }
+
+async function resolveFavItems(){
+  const keys = window.Favorites.all();
+  const parsed = keys.map(k=>({key:k, ...parseFavKey(k)}));
+  const docIds = [...new Set(parsed.filter(p=>p.kind==='section').map(p=>p.doc))];
+  const [idx] = await Promise.all([loadIndex(), ...docIds.map(id=>loadDoc(id).catch(()=>null))]);
+  const out = [];
+  for (const p of parsed){
+    if (p.kind === 'article'){
+      const src = p.doc==='uak' ? DATA.articles : DATA.traffic;
+      const a = src?.find(x=>x.num===p.num);
+      if (a) out.push({ key:p.key, kind:'article', doc:p.doc, num:p.num, title:`${p.doc==='uak'?'УАК':'ДК'} ${p.num} — ${a.title}`, text:a.sanction||'Санкция не предусмотрена' });
+    } else {
+      const doc = DATA.docs[p.doc];
+      const s = doc?.sections?.[p.idx];
+      if (s){
+        const meta = idx.find(d=>d.id===p.doc);
+        out.push({ key:p.key, kind:'section', doc:p.doc, sidx:p.idx,
+          title:`${esc0(meta?.title||doc.title)} — ${esc0(s.heading||'без заголовка')}`,
+          text:(s.paras||[]).join(' ').slice(0,240) });
+      }
+    }
+  }
+  return out;
+}
+const esc0 = s => String(s??'');
 
 function guideItemBlock(it){
   if (it.type === 'article'){
@@ -667,6 +693,13 @@ function guideItemBlock(it){
     const a = src?.find(x=>x.num===it.num);
     if (!a) return '';
     return `<div class="gb gb--note"><b class="gb__h">${it.doc==='uak'?'УАК':'ДК'} ${esc(it.num)} — ${esc(a.title)}</b><p>${esc(a.sanction||'Санкция не предусмотрена')}</p></div>`;
+  }
+  if (it.type === 'section'){
+    const doc = DATA.docs[it.doc];
+    const meta = DATA.index?.find(d=>d.id===it.doc);
+    const s = doc?.sections?.[it.sidx];
+    if (!s) return '';
+    return `<div class="gb gb--note"><b class="gb__h">${esc(meta?.title||doc.title)}${s.heading?' — '+esc(s.heading):''}</b><p>${esc((s.paras||[]).join(' '))}</p></div>`;
   }
   const a = window.FavAnswers.all().find(x=>x.id===it.id);
   if (!a) return '';
@@ -679,31 +712,43 @@ function guideItemText(it){
     if (!a) return '';
     return `${it.doc==='uak'?'УАК':'ДК'} ${it.num} — ${a.title}\n${a.sanction||'Санкция не предусмотрена'}`;
   }
+  if (it.type === 'section'){
+    const doc = DATA.docs[it.doc];
+    const meta = DATA.index?.find(d=>d.id===it.doc);
+    const s = doc?.sections?.[it.sidx];
+    if (!s) return '';
+    return `${meta?.title||doc.title}${s.heading?' — '+s.heading:''}\n${(s.paras||[]).join(' ')}`;
+  }
   const a = window.FavAnswers.all().find(x=>x.id===it.id);
   return a ? `${a.question}\n${a.answer}` : '';
 }
 
 async function viewFavorites(){
   await Promise.all([loadArticles(), loadTraffic()]);
-  const favArts = resolveFavArticles();
-  const favAns = window.FavAnswers.all();
   const guides = window.CustomGuides.all();
+  /* памятки могут ссылаться на разделы документов, которых нет среди текущих
+     избранных — подгружаем их тоже, иначе открыть сохранённую памятку не выйдет */
+  const guideDocIds = [...new Set(guides.flatMap(g=>g.items).filter(i=>i.type==='section').map(i=>i.doc))];
+  await Promise.all(guideDocIds.map(id=>loadDoc(id).catch(()=>null)));
+
+  const favItems = await resolveFavItems();
+  const favAns = window.FavAnswers.all();
 
   return `
   <section class="sec view">
     <div class="sec__head"><div><h2 class="h2">Избранное и памятки</h2>
-      <p>Статьи (звёздочка на карточке статьи) и ответы ИИ (кнопка под ответом в чате), которые вы сохранили —
-         выберите нужные и соберите из них свою памятку.</p></div></div>
+      <p>Статьи УАК/ДК и разделы любых других НПА (звёздочка на карточке статьи или у заголовка раздела в документе)
+         и ответы ИИ (кнопка под ответом в чате) — выберите нужные и соберите из них свою памятку.</p></div></div>
 
     <div class="fav-cols">
       <div>
-        <h3 class="h3" style="margin-bottom:10px">Статьи (${favArts.length})</h3>
+        <h3 class="h3" style="margin-bottom:10px">Статьи и разделы НПА (${favItems.length})</h3>
         <div class="fav-list">
-          ${favArts.length ? favArts.map(a=>`
+          ${favItems.length ? favItems.map(a=>`
             <label class="fav-row">
-              <input type="checkbox" data-pick="article:${a.doc}:${esc(a.num)}">
-              <span><b>${a.doc==='uak'?'УАК':'ДК'} ${esc(a.num)}</b> — ${esc(a.title)}</span>
-            </label>`).join('') : '<p class="modal__hint">Пока нет — нажимайте ★ на карточках статей УАК/ДК.</p>'}
+              <input type="checkbox" data-pick="${a.kind==='article'?`article:${a.doc}:${esc(a.num)}`:`section:${a.doc}:${a.sidx}`}">
+              <span><b>${esc(a.title)}</b>${a.text?' — '+esc(a.text.slice(0,90)):''}</span>
+            </label>`).join('') : '<p class="modal__hint">Пока нет — нажимайте ★ на карточках статей УАК/ДК или у заголовков в любом другом документе.</p>'}
         </div>
 
         <h3 class="h3" style="margin:20px 0 10px">Ответы ИИ (${favAns.length})</h3>
@@ -747,7 +792,9 @@ function bindFavorites(){
     if (!title){ toast('Укажите название памятки'); return; }
     const picked = $$('[data-pick]:checked').map(el=>{
       const [type, a, b] = el.dataset.pick.split(':');
-      return type==='article' ? {type, doc:a, num:b} : {type, id:a};
+      if (type==='article') return {type, doc:a, num:b};
+      if (type==='section') return {type, doc:a, sidx:Number(b)};
+      return {type, id:a};
     });
     if (!picked.length){ toast('Выберите хотя бы один пункт'); return; }
     window.CustomGuides.add(title, picked);
@@ -853,7 +900,9 @@ async function viewDoc(id){
         ${heads.map(s=>`<a href="#s${s.i}" data-s="${s.i}">${esc(s.heading)}</a>`).join('')}</aside>
       <div class="rdoc" id="rdoc">
         ${doc.sections.map((s,i)=>{
-          const inner = (s.heading?`<h${s.level===1?2:3} id="s${i}">${esc(s.heading)}</h${s.level===1?2:3}>`:'')
+          const favKey = `section:${id}:${i}`;
+          const star = s.heading ? `<button class="art__fav sec__fav${window.Favorites?.has(favKey)?' is-on':''}" data-fav="${favKey}" title="В избранное" type="button">★</button>` : '';
+          const inner = (s.heading?`<h${s.level===1?2:3} id="s${i}">${esc(s.heading)}${star}</h${s.level===1?2:3}>`:'')
                       + s.paras.map(para).join('');
           return s.amendment ? `<div class="amend">${inner}</div>` : inner;
         }).join('')}

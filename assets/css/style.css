@@ -259,6 +259,7 @@ kbd{
 .art__fav{flex:none;background:none;border:0;font-size:17px;line-height:1;color:var(--line-2);cursor:pointer;padding:2px;margin-top:1px;transition:color .15s,transform .15s}
 .art__fav:hover{color:var(--tx-3);transform:scale(1.15)}
 .art__fav.is-on{color:var(--acc)}
+.sec__fav{margin-left:10px;vertical-align:middle;font-size:15px}
 .art__chev{flex:none;color:var(--tx-3);transition:transform .32s var(--ease);margin-top:3px}
 .art.is-open .art__chev{transform:rotate(180deg);color:var(--acc)}
 .art__drop{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s var(--ease)}
