@@ -386,9 +386,9 @@ async function viewGuides(params){
   const cur = g.guides.find(x=>x.id===id) || g.guides[0];
   return `
   <section class="sec view">
-    <div class="sec__head"><div><h2 class="h2">Памятки гос. сотрудника</h2>
-      <p>Разборы под конкретные ситуации: как отвечать адвокату, чем отличаются структуры
-         и где правила проекта перекрывают закон.</p></div></div>
+    <div class="sec__head"><div><h2 class="h2">Памятки</h2>
+      <p>Разборы под конкретные роли и ситуации: суды и судебный процесс, права адвоката,
+         как отвечать адвокату, чем отличаются структуры и где правила проекта перекрывают закон.</p></div></div>
     <div class="tools"><div class="chips">
       ${g.guides.map(x=>`<a class="chip${x.id===cur.id?' is-on':''}" href="#/guides?g=${x.id}">${esc(x.title)}</a>`).join('')}
     </div></div>
