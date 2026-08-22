@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-05",
+  "updated": "2026-08-22",
   "source": "https://forum.gta5rp.com/threads/forma-podachi-iskovykh-zayavlenii-apellyatsii-kassatsii-i-obrashchenii-v-verkhovnyi-sud.3248888/ · forma-podachi-iskovykh-zayavlenii-v-federal-nyi-sud.3250049 · pravila-podachi-iskovykh-zayavlenii.3259166 · myu-sistema-obrashchenii-i-khodataistv-v-prokuraturu-shtata-san-andreas.3406039",
   "groups": [
     {
@@ -30,6 +30,21 @@
         "prok-obraschenie"
       ],
       "submitUrl": "https://forum.gta5rp.com/forums/zhaloby-v-prokuraturu.1764/"
+    },
+    {
+      "id": "adv",
+      "name": "Адвокатский запрос",
+      "forms": [
+        "adv-zapros"
+      ],
+      "submitUrl": "https://forum.gta5rp.com/threads/ka-advokat-skii-zapros.3406040/"
+    },
+    {
+      "id": "adv-doc",
+      "name": "Адвокатские документы",
+      "forms": [
+        "adv-dogovor"
+      ]
     }
   ],
   "forms": [
@@ -823,6 +838,150 @@
       "aiFields": {
         "description": "opisanie",
         "request": "prosba"
+      }
+    },
+    {
+      "id": "adv-zapros",
+      "title": "Адвокатский запрос",
+      "note": "Перед направлением запрос нужно опубликовать на сайте Министерства Юстиции в разделе «Адвокатский запрос», соблюдая порядковый номер документа (Закон об адвокатуре, ст. 1.1 ч. 1.1). Орган обязан выдать запрошенные документы или их копии; неправомерный отказ или нарушение сроков влечёт ответственность (ч. 3).",
+      "fields": [
+        {
+          "key": "status",
+          "label": "Ваш статус",
+          "type": "select",
+          "options": [
+            "Частный адвокат",
+            "Государственный адвокат"
+          ],
+          "default": "Частный адвокат"
+        },
+        {
+          "key": "imya",
+          "label": "Адвокат — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "licenz",
+          "label": "Номер лицензии (для частного адвоката)",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "tel",
+          "label": "Телефон",
+          "type": "text"
+        },
+        {
+          "key": "mail",
+          "label": "Discord / почта",
+          "type": "text"
+        },
+        {
+          "key": "gosorgan",
+          "label": "Кому направляется запрос (орган/организация)",
+          "type": "text",
+          "placeholder": "например, ЛСПД"
+        },
+        {
+          "key": "delo",
+          "label": "В рамках какого дела и чьи интересы вы представляете",
+          "type": "textarea"
+        },
+        {
+          "key": "zapros_tekst",
+          "label": "Что именно запрашиваете",
+          "type": "textarea",
+          "placeholder": "справки, характеристики, документы — опишите своими словами, ИИ поможет сформулировать"
+        },
+        {
+          "key": "osnovanie",
+          "label": "Обоснование необходимости",
+          "type": "textarea",
+          "optional": true
+        },
+        {
+          "key": "data",
+          "label": "Дата",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "АДВОКАТСКИЙ ЗАПРОС\n(предварительно опубликован на портале Министерства Юстиции в разделе «Адвокатский запрос» под порядковым номером ___)\n\nОт кого: {{status}} {{imya}}\nЛицензия №: {{licenz}}\nКонтакты: {{tel}} / {{mail}}\n\nКому: {{gosorgan}}\n\nВ рамках оказания юридической помощи по делу: {{delo}}\n\nПрошу предоставить: {{zapros_tekst}}\n\nОбоснование: {{osnovanie}}\n\nОснование запроса — Закон «Об адвокатской деятельности и адвокатуре в Штате Сан-Андреас», гл. II ст. 1.1. Прошу рассмотреть запрос и предоставить запрошенные сведения либо мотивированный отказ в установленный срок.\n\nДата: {{data}}\nПодпись: {{imya}}",
+      "aiFields": {
+        "description": "zapros_tekst",
+        "request": null
+      }
+    },
+    {
+      "id": "adv-dogovor",
+      "title": "Договор об оказании юридической помощи (образец)",
+      "note": "Это неофициальный образец для частной практики, а не форма с форума: закон не устанавливает обязательную форму договора — частный адвокат вправе сам определять условия и размер вознаграждения (Закон об адвокатуре, гл. III ст. 2 ч. 3).",
+      "fields": [
+        {
+          "key": "imya",
+          "label": "Адвокат — ваше имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "licenz",
+          "label": "Номер лицензии частного адвоката",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "tel",
+          "label": "Телефон",
+          "type": "text"
+        },
+        {
+          "key": "mail",
+          "label": "Discord / почта",
+          "type": "text"
+        },
+        {
+          "key": "client_imya",
+          "label": "Клиент — имя и фамилия",
+          "type": "text"
+        },
+        {
+          "key": "client_pasport",
+          "label": "Клиент — номер паспорта",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "predmet",
+          "label": "Предмет договора — какая юридическая помощь оказывается",
+          "type": "textarea"
+        },
+        {
+          "key": "stoimost",
+          "label": "Стоимость услуг",
+          "type": "text"
+        },
+        {
+          "key": "usloviya",
+          "label": "Условия и порядок оплаты",
+          "type": "textarea",
+          "optional": true
+        },
+        {
+          "key": "srok",
+          "label": "Срок действия договора",
+          "type": "text",
+          "optional": true
+        },
+        {
+          "key": "data",
+          "label": "Дата заключения",
+          "type": "text",
+          "placeholder": "дд.мм.гггг"
+        }
+      ],
+      "template": "ДОГОВОР ОБ ОКАЗАНИИ ЮРИДИЧЕСКОЙ ПОМОЩИ\n(образец, не официальная форма)\n\nАдвокат: {{imya}}, лицензия №{{licenz}}, контакты: {{tel}} / {{mail}}\nКлиент: {{client_imya}}, паспорт {{client_pasport}}\n\n1. Предмет договора\n{{predmet}}\n\n2. Стоимость услуг\n{{stoimost}}\n\n3. Условия оплаты\n{{usloviya}}\n\n4. Срок действия\n{{srok}}\n\nДата заключения: {{data}}\n\nПодписи сторон:\nАдвокат: ________ ({{imya}})\nКлиент: ________ ({{client_imya}})",
+      "aiFields": {
+        "description": "predmet",
+        "request": null
       }
     }
   ],

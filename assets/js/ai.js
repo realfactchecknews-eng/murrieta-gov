@@ -97,6 +97,16 @@ const ABBR_DOCS = {
   'усмс':['z-usms'], 'usms':['z-usms'],
   'прецедент':['s-precedenty'], 'прецеденты':['s-precedenty'], 'толкование':['s-precedenty'], 'толкования':['s-precedenty'],
   'адвокатура':['z-advokat'], 'адвокатский':['z-advokat'],
+  'адвокат':['z-advokat','guide-advokat-prava','s-adv-reestr'], 'адвоката':['z-advokat','guide-advokat-prava','s-adv-reestr'],
+  'адвокату':['z-advokat','guide-advokat-prava'], 'адвокатом':['z-advokat','guide-advokat-prava'],
+  'суд':['sudebnyy','guide-sudy'], 'суды':['sudebnyy','guide-sudy'], 'суда':['sudebnyy','guide-sudy'],
+  'судебный':['sudebnyy','guide-sudy'], 'судебная':['sudebnyy','guide-sudy'], 'судопроизводство':['sudebnyy','guide-sudy'],
+  'судья':['sudebnyy','s-etika'], 'судьи':['sudebnyy','s-etika'], 'судью':['sudebnyy','s-etika'],
+  'апелляция':['sudebnyy','guide-sudy'], 'апелляционную':['sudebnyy','guide-sudy'], 'апелляционная':['sudebnyy','guide-sudy'],
+  'кассация':['sudebnyy','guide-sudy'], 'кассационную':['sudebnyy','guide-sudy'], 'кассационная':['sudebnyy','guide-sudy'],
+  'ходатайство':['sudebnyy','guide-sudy'], 'ходатайства':['sudebnyy','guide-sudy'], 'ходатайствовать':['sudebnyy'],
+  'лицензия':['z-advokat','s-adv-reestr'], 'лицензию':['z-advokat','s-adv-reestr'], 'лицензии':['z-advokat','s-adv-reestr'],
+  'отвод':['sudebnyy'], 'реабилитация':['sudebnyy'], 'удо':['sudebnyy'],
   'прокуратура':['z-prokuratura'],
   'юрисдикция':['z-yurisdikciya'],
   'оружие':['z-oruzhie'], 'мвоз':['z-oruzhie'],
@@ -523,7 +533,7 @@ AI.bind = function(){
 
     try{
       await ensureIndex();
-      const ctx = retrieve(text, 8);
+      const ctx = retrieve(text, 10);
       /* Без номеров [1],[2] — иначе модель тащит их в ответ как «источники».
          Для памяток заголовок вообще не показываем: если модель видит
          строку «Памятка: …», она копирует её в ответ как название
