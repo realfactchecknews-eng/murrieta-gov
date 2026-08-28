@@ -119,6 +119,28 @@ function abbrevDocs(query){
   return hit;
 }
 
+/* Вопросы формулируют смысл, а не термины кодекса: «что мне за это будет» и
+   «наказание по статье» должны находить одно и то же, хотя не делят ни
+   одного слова. BM25 сам по себе ищет только по общим токенам — здесь
+   явные обходные пути для типичных бытовых формулировок, чтобы поиск
+   срабатывал по смыслу вопроса, а не только по буквальным словам. */
+const PHRASE_EXPAND = [
+  [/что (мне )?(будет|грозит|светит)|чем это грозит|какое наказание/i, 'наказание санкция штраф арест ответственность'],
+  [/как (правильно )?(оформить|провести|составить|подать)/i, 'порядок процедура'],
+  [/на каком основании|почему (нельзя|можно|запрещено|разрешено)/i, 'основание'],
+  [/сколько (дней|минут|часов|стоит|платить)/i, 'срок сумма'],
+  [/куда (обращаться|жаловаться|подавать)/i, 'прокуратура суд обращение'],
+  [/не ответил|не вышел на связь|не явился|молчит/i, 'ожидание минут'],
+  [/кто прав|кто виноват/i, 'квалификация ответственность'],
+  [/уволить|уволен|увольнение/i, 'отстранение дисциплинарный'],
+  [/задержали|задержание/i, 'порядок задержания основания'],
+];
+function expandQuery(query){
+  let extra = '';
+  for (const [re, words] of PHRASE_EXPAND) if (re.test(query)) extra += ' ' + words;
+  return extra ? query + extra : query;
+}
+
 async function ensureIndex(){
   if (AI.chunks) return;
   const r = await fetch('data/chunks.json');
@@ -141,9 +163,10 @@ async function ensureIndex(){
 /* BM25 + буст за точный номер статьи */
 function retrieve(query, k=10, opts={}){
   const ql = query.toLowerCase();
-  const q = toks(query);
+  const expanded = expandQuery(query);
+  const q = toks(expanded);
   const nums = query.match(/\b\d+\.\d+(?:\.\d+)?\b/g) || [];
-  const abbrDocs = abbrevDocs(query);
+  const abbrDocs = abbrevDocs(expanded);
   /* Буст за буквальное совпадение значимых слов (5+ букв) в самом тексте
      фрагмента — обходит огрубление 4-символьного стемминга для редких,
      но важных существительных («сексуальный», «хулиганство»), которые
@@ -156,7 +179,7 @@ function retrieve(query, k=10, opts={}){
      эти слова-триггеры вообще — вызывающий код может форсировать буст
      через opts.forceCore, иначе УАК не получит приоритет и потонет в
      профильных законах структур, которые просто упомянуты в тексте. */
-  const wantsNorm = opts.forceCore || /стать|наказан|штраф|залог|нарушен|хулиган|можно ли|могу ли|обязан|задерж|арест|срок/.test(ql);
+  const wantsNorm = opts.forceCore || /стать|наказан|штраф|залог|нарушен|хулиган|можно ли|могу ли|обязан|задерж|арест|срок/.test(expanded.toLowerCase());
   const k1=1.5, b=0.72;
   const scored = AI.chunks.map(c=>{
     let s = 0;
@@ -324,7 +347,7 @@ async function callStructured(description, {mode, extra, sections}){
 
 AI.draftPetition = (description, formTitle) => callStructured(description, {
   mode: 'draft', extra: { formTitle },
-  sections: [['analysis','АНАЛИЗ'],['description','ОПИСАНИЕ СИТУАЦИИ'],['request','ПРОСЬБА']],
+  sections: [['analysis','АНАЛИЗ'],['description','ОПИСАНИЕ СИТУАЦИИ'],['request','ПРОСЬБА'],['questions','ВОПРОСЫ']],
 });
 
 AI.assessSituation = (description) => callStructured(description, {

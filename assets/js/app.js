@@ -343,38 +343,58 @@ async function viewCards(){
 /* ============================================================
    ПАМЯТКИ (адвокат / фракции / конфликты / прецеденты)
    ============================================================ */
+/* Кликабельные ссылки на статьи прямо в тексте памяток — «УАК 12.6.1»
+   открывает карточку статьи в УАК, «ДК ст. 4.2» — в ДК, названия
+   кодексов/законов ведут на их страницу в «Документах». */
+const GUIDE_DOC_LINKS = [
+  [/Судебн(?:ый|ого)\s+кодекс[а-я]*/gi, 'sudebnyy'],
+  [/Процессуальн(?:ый|ого)\s+кодекс[а-я]*/gi, 'pk'],
+  [/Дорожн(?:ый|ого)\s+кодекс[а-я]*/gi, 'dk'],
+  [/Этическ(?:ий|ого)\s+кодекс[а-я]*/gi, 'eticheskiy'],
+  [/Закон[а-я]*\s+об?\s+адвокат[а-я]*/gi, 'z-advokat'],
+];
+function linkRefs(html){
+  /* \b не работает перед кириллицей (это не \w) — используем явную границу. */
+  let out = html
+    .replace(/(^|[^а-яёА-ЯЁa-zA-Z])УАК\s+(\d{1,2}\.\d{1,2}(?:\.\d{1,2})?)/g, (m,pre,n)=>`${pre}<a href="#/uak" class="ref-link" data-open-art="${n}">УАК ${n}</a>`)
+    .replace(/(^|[^а-яёА-ЯЁa-zA-Z])ДК\s+(?:ст\.\s*)?(\d{1,2}\.\d{1,2}(?:\.\d{1,2})?)/g, (m,pre,n)=>`${pre}<a href="#/dk" class="ref-link" data-open-art="${n}">ДК ${n}</a>`);
+  for (const [re, docId] of GUIDE_DOC_LINKS) out = out.replace(re, m=>`<a href="#/doc/${docId}" class="ref-link">${m}</a>`);
+  return out;
+}
+const escL = t => linkRefs(esc(t));
+
 const guideBlock = b => {
   const H = t => t ? `<b class="gb__h">${esc(t)}</b>` : '';
   switch (b.type){
     case 'warn':
-      return `<div class="gb gb--warn">${H(b.title)}<p>${esc(b.text)}</p></div>`;
+      return `<div class="gb gb--warn">${H(b.title)}<p>${escL(b.text)}</p></div>`;
     case 'note':
-      return `<div class="gb gb--note"><p>${esc(b.text)}</p></div>`;
+      return `<div class="gb gb--note"><p>${escL(b.text)}</p></div>`;
     case 'list':
       return `<div class="gb gb--${b.tone||'plain'}">${H(b.title)}
-        <ul class="gb__ul">${b.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+        <ul class="gb__ul">${b.items.map(i=>`<li>${escL(i)}</li>`).join('')}</ul></div>`;
     case 'table':
       return `<div class="gb">${H(b.title)}<table class="qtable qtable--wide">
-        ${b.rows.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>`;
+        ${b.rows.map(([k,v])=>`<tr><td>${escL(k)}</td><td>${escL(v)}</td></tr>`).join('')}</table></div>`;
     case 'cards':
       return `<div class="gb">${H(b.title)}<div class="fgrid">
         ${b.items.map(i=>`<div class="fcard"><div class="fcard__h"><b>${esc(i.name)}</b>
-          <span class="tag tag--acc">${esc(i.tag)}</span></div><p>${esc(i.text)}</p></div>`).join('')}
+          <span class="tag tag--acc">${esc(i.tag)}</span></div><p>${escL(i.text)}</p></div>`).join('')}
       </div></div>`;
     case 'conflicts':
       return `<div class="gb">${b.items.map(c=>`
         <div class="cf">
           <b class="cf__t">${esc(c.topic)}</b>
-          <div class="cf__row cf__row--law"><span>Закон</span><p>${esc(c.law)}</p></div>
-          <div class="cf__row cf__row--rule"><span>Правила</span><p>${esc(c.rule)}</p></div>
-          <div class="cf__row cf__row--out"><span>Итог</span><p>${esc(c.verdict)}</p></div>
-          ${c.penalty?`<div class="cf__pen">${esc(c.penalty)}</div>`:''}
+          <div class="cf__row cf__row--law"><span>Закон</span><p>${escL(c.law)}</p></div>
+          <div class="cf__row cf__row--rule"><span>Правила</span><p>${escL(c.rule)}</p></div>
+          <div class="cf__row cf__row--out"><span>Итог</span><p>${escL(c.verdict)}</p></div>
+          ${c.penalty?`<div class="cf__pen">${escL(c.penalty)}</div>`:''}
         </div>`).join('')}</div>`;
     case 'prec':
       return `<div class="gb">${b.items.map(p=>`
         <div class="pc">
           <span class="pc__n">${esc(p.num)}</span>
-          <div><b>${esc(p.topic)}</b><p>${esc(p.text)}</p></div>
+          <div><b>${esc(p.topic)}</b><p>${escL(p.text)}</p></div>
         </div>`).join('')}</div>`;
     default: return '';
   }
@@ -389,9 +409,14 @@ async function viewGuides(params){
     <div class="sec__head"><div><h2 class="h2">Памятки</h2>
       <p>Разборы под конкретные роли и ситуации: суды и судебный процесс, права адвоката,
          как отвечать адвокату, чем отличаются структуры и где правила проекта перекрывают закон.</p></div></div>
-    <div class="tools"><div class="chips">
-      ${g.guides.map(x=>`<a class="chip${x.id===cur.id?' is-on':''}" href="#/guides?g=${x.id}">${esc(x.title)}</a>`).join('')}
-    </div></div>
+    <div class="grid grid--3 gnav">
+      ${g.guides.map(x=>`
+        <a class="card card--link gcard${x.id===cur.id?' gcard--on':''}" href="#/guides?g=${x.id}">
+          <div class="card__ico">${ico(x.icon,18)}</div>
+          <h3 class="h3" style="font-size:15.5px;margin-top:9px">${esc(x.title)}</h3>
+          <p style="font-size:12.5px;color:var(--tx-3);margin-top:4px;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden">${esc(x.lead)}</p>
+        </a>`).join('')}
+    </div>
     <article class="guide rv">
       <div class="guide__head">
         <span class="card__ico">${ico(cur.icon,20)}</span>
@@ -494,6 +519,7 @@ async function viewForms(params){
             <span class="fg-ai__hint" id="fgAiHint">Проверит формулировку и вставит готовый текст в поля ниже — их можно будет поправить вручную.</span>
           </div>
           <div class="fg-ai__analysis" id="fgAiAnalysis" hidden></div>
+          <div class="fg-ai__analysis fg-ai__analysis--q" id="fgAiQuestions" hidden></div>
         </div>
 
         <div class="fg-fields" id="fgFields">${form.fields.map(fieldHtml).join('')}</div>
@@ -554,7 +580,7 @@ function bindForms(data, form){
     setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
   });
 
-  const aiGo = $('#fgAiGo'), aiInput = $('#fgAiInput'), aiHint = $('#fgAiHint'), aiAnalysis = $('#fgAiAnalysis');
+  const aiGo = $('#fgAiGo'), aiInput = $('#fgAiInput'), aiHint = $('#fgAiHint'), aiAnalysis = $('#fgAiAnalysis'), aiQuestions = $('#fgAiQuestions');
   aiGo?.addEventListener('click', async ()=>{
     const desc = aiInput.value.trim();
     if (!desc){ toast('Опишите ситуацию — поле пустое'); return; }
@@ -565,6 +591,12 @@ function bindForms(data, form){
       if (r.analysis){
         aiAnalysis.hidden = false;
         aiAnalysis.innerHTML = `<b>Анализ ИИ</b><p>${esc(r.analysis)}</p>`;
+      }
+      if (r.questions && !/^уточнени[йя].{0,20}не\s+требу/i.test(r.questions.trim())){
+        aiQuestions.hidden = false;
+        aiQuestions.innerHTML = `<b>Чтобы усилить заявление, уточните</b>${md(r.questions)}`;
+      } else {
+        aiQuestions.hidden = true; aiQuestions.innerHTML = '';
       }
       if (r.description && form.aiFields?.description){
         const key = form.aiFields.description;
@@ -976,6 +1008,9 @@ function bindView(path){
     renderDk(); rebindArts();
     const inp = $('#dq'); let t;
     inp.addEventListener('input',()=>{ clearTimeout(t); t=setTimeout(()=>{ dkState.q=inp.value; renderDk(); rebindArts(); },140); });
+    if (window.__openArt){ const n=window.__openArt; window.__openArt=null;
+      const el=$(`.art[data-num="${CSS.escape(n)}"]`);
+      if(el){ el.classList.add('is-open'); el.scrollIntoView({block:'center',behavior:'smooth'}); } }
   }
   if (path.startsWith('/doc/')) bindToc();
   if (path === '/ai') window.AI.bind();
@@ -1103,8 +1138,12 @@ function boot(){
   }, true);
   document.addEventListener('click', e=>{
     const chip = e.target.closest('[data-fav-open]'); if (!chip) return;
-    const [doc, num] = chip.dataset.favOpen.split(':');
-    if (doc === 'uak') window.__openArt = num;
+    const [, num] = chip.dataset.favOpen.split(':');
+    window.__openArt = num;
+  });
+  document.addEventListener('click', e=>{
+    const a = e.target.closest('[data-open-art]'); if (!a) return;
+    window.__openArt = a.dataset.openArt;
   });
 
   /* профиль */
