@@ -1173,6 +1173,6 @@ function boot(){
     else if (e.key==='Enter'){ e.preventDefault(); cmdGo(CMD.sel); }
   });
 
-  loadIndex().then(idx=>{ $('#footMeta').textContent = `${idx.length} документов · обновлено 04.08.2026`; });
+  loadIndex().then(idx=>{ $('#footMeta').textContent = `${idx.length} документов · обновлено 28.08.2026`; });
 }
 document.addEventListener('DOMContentLoaded', boot);

@@ -53,7 +53,9 @@ META = [
     ("z-partii",      "Закон_о_политических_партиях",               "zakon", "О полит. партиях"),
     ("z-yurisdikciya","Закон_о_Юрисдикции",                         "zakon", "О юрисдикции"),
     ("z-gossobstv",   "Закон_об_управлении_гос._собственностью",    "zakon", "Об управлении гос. собств."),
-    ("precedenty",    "Судебные_прецеденты_и_толкования",           "zakon", "Прецеденты"),
+    # «Судебные прецеденты и толкования» (3237175) — тема-заглушка из одной
+    # картинки без текста; сами прецеденты лежат в s-precedenty, поэтому
+    # отдельный пустой документ только зашумлял выдачу и корпус ИИ.
 
     ("p-obshie",      "ПРАВИЛА_Общие_правила_проекта",              "rules", "Общие правила проекта"),
     ("p-murrieta",    "ПРАВИЛА_СЕРВЕРА_MURRIETA",                   "rules", "Правила сервера Murrieta"),
@@ -96,10 +98,15 @@ META = [
     ("u-saspa",       "УСТАВ_SASPA",                                "ustav", "Устав SASPA"),
     ("u-saspa-doktr", "SASPA_доктрина_наказаний",                   "ustav", "SASPA: доктрина наказаний"),
     ("u-saspa-rasp",  "SASPA_внутренний_распорядок",                "ustav", "SASPA: распорядок заключённых"),
+    # Уставы EMS перевыпущены 28.08.2026 новыми темами, приложения перенумерованы:
+    # было 1-дисциплинарный/2-лицензии/3-цены/4-медкарты,
+    # стало 1-медкарты/2-внешние цены/3-внутренние цены/4-лицензии/5-дисциплинарный.
     ("u-ems",         "УСТАВ_EMS",                                  "ustav", "Устав EMS"),
-    ("u-ems-disc",    "УСТАВ_EMS_прил1_дисциплинарный",             "ustav", "EMS: дисциплинарный раздел"),
-    ("u-ems-lic",     "УСТАВ_EMS_прил2_лицензии",                   "ustav", "EMS: лицензии"),
-    ("u-ems-med",     "УСТАВ_EMS_прил4_медкарты",                   "ustav", "EMS: медкарты"),
+    ("u-ems-disc",    "УСТАВ_EMS_прил5_дисциплинарный",             "ustav", "EMS: дисциплинарный раздел"),
+    ("u-ems-lic",     "УСТАВ_EMS_прил4_лицензии",                   "ustav", "EMS: лицензии"),
+    ("u-ems-med",     "УСТАВ_EMS_прил1_медкарты",                   "ustav", "EMS: медкарты"),
+    ("u-ems-cenavne", "УСТАВ_EMS_прил2_внешние_цены",               "ustav", "EMS: внешние цены"),
+    ("u-ems-cenavnu", "УСТАВ_EMS_прил3_внутренние_цены",            "ustav", "EMS: внутренние цены"),
     ("u-gov",         "УСТАВ_Правительства",                        "ustav", "Устав Правительства"),
     ("u-gov-lic",     "GOV_правительственные_лицензии",             "ustav", "Правительственные лицензии"),
 
@@ -187,10 +194,17 @@ def parse_doc(path):
 
 
 # ------------------------------------------------------------- статьи УАК
+# Форум помечает статьи цветным квадратом тяжести перед номером:
+# 🟩 — лёгкие, 🟨 — средние, 🟥 — тяжкие. Маркер необязателен (в старых
+# редакциях его не было), поэтому группа опциональная.
+SEVERITY = {"🟩": "low", "🟨": "mid", "🟥": "high"}
 ART_RE = re.compile(
-    r"^(?P<num>\d+(?:\.\d+){0,3})\s*(?P<m1>\*{0,3})\s*\[(?P<type>[УАAY])\]\s*"
-    r"(?P<m2>\*{0,3})\s*(?:\((?P<jur>[^)]*)\))?\s*(?P<m3>\*{0,3})\s*[-–—]?\s*(?P<body>.+)$"
+    r"^(?P<sev>[🟩🟨🟥])?\s*(?P<num>\d+(?:\.\d+){0,3})\s*(?P<m1>\*{0,3})\s*\[(?P<type>[УАAY])\]\s*"
+    r"(?P<m2>\*{0,3})\s*(?:\((?P<jur>[^)]*)\))?\s*(?P<m3>\*{0,3})\s*[-–—]?\s*(?P<body>.*)$"
 )
+# Многочастная статья: заголовок без диспозиции, а части идут отдельными
+# строками («ч. 1. …  - 2 года лишения свободы»). Появилось в редакции 21.08.2026 (ст. 15.8).
+PART_RE = re.compile(r"^ч\.\s*(\d+)\.?\s*(.+)$")
 # суммы пишут и как «5.000$», и как «$5.000»
 MONEY = re.compile(r"(?:(\d[\d\s.,]*?)\s*\$|\$\s*(\d[\d\s.,]*))")
 # начало санкции, когда автор не поставил тире
@@ -231,6 +245,20 @@ def split_sanction(body):
     return body.strip(), ""
 
 
+def sanction_fields(sanc):
+    """Числовые поля, выводимые из текста санкции."""
+    jail = re.search(r"(?:от\s*(\d+)\s*до\s*)?(\d+)\s*(?:лет|год|года)\s+лишения свободы", sanc, re.I)
+    arrest = re.search(r"(?:от\s*(\d+)\s*до\s*)?(\d+)\s*суток", sanc, re.I)
+    bail = re.search(r"[Зз]алог[а-я]*\s*(?:от|до)?\s*([\d\s.,]+)\$", sanc)
+    return {
+        "sanction": sanc,
+        "money": money_list(sanc),
+        "jail_years": [int(x) for x in (jail.groups() if jail else []) if x],
+        "arrest_days": [int(x) for x in (arrest.groups() if arrest else []) if x],
+        "bail": int(re.sub(r"[^\d]", "", bail.group(1))) if bail else None,
+    }
+
+
 def parse_uak(path):
     txt = io.open(path, encoding="utf-8").read()
     arts, chapter, section = [], "", ""
@@ -246,6 +274,18 @@ def parse_uak(path):
             continue
         m = ART_RE.match(s)
         if not m:
+            # части многочастной статьи: первая даёт диспозицию и санкцию,
+            # остальные идут примечаниями, чтобы не потерять их текст
+            pm = PART_RE.match(s)
+            if pm and arts and not arts[-1]["title"]:
+                disp, sanc = split_sanction(pm.group(2))
+                arts[-1]["title"] = disp
+                arts[-1].update(sanction_fields(sanc))
+                arts[-1]["text"] = arts[-1]["text"] + " " + s
+                continue
+            if pm and arts and arts[-1].get("multipart"):
+                arts[-1].setdefault("notes", []).append(s)
+                continue
             # продолжение предыдущей статьи: примечание/исключение может нести санкцию
             if arts and re.match(r"^(Примечание|Исключение|Пример)\b", s):
                 arts[-1].setdefault("notes", []).append(s)
@@ -259,24 +299,21 @@ def parse_uak(path):
         body = m.group("body")
         disp, sanc = split_sanction(body)
         typ = "У" if m.group("type") in ("У", "Y") else "А"
-        jail = re.search(r"(?:от\s*(\d+)\s*до\s*)?(\d+)\s*(?:лет|год|года)\s+лишения свободы", sanc, re.I)
-        arrest = re.search(r"(?:от\s*(\d+)\s*до\s*)?(\d+)\s*суток", sanc, re.I)
-        bail = re.search(r"[Зз]алог[а-я]*\s*(?:от|до)?\s*([\d\s.,]+)\$", sanc)
-        arts.append({
+        art = {
             "num": m.group("num"),
             "type": typ,
+            "severity": SEVERITY.get(m.group("sev") or "", ""),
             "jurisdiction": [j.strip() for j in (m.group("jur") or "").split("/") if j.strip()],
             "ban": len(marks),               # * 7 дней, ** 21 день, *** пожизненно
             "section": section,
             "chapter": chapter,
             "title": disp,
-            "sanction": sanc,
-            "money": money_list(sanc),
-            "jail_years": [int(x) for x in (jail.groups() if jail else []) if x],
-            "arrest_days": [int(x) for x in (arrest.groups() if arrest else []) if x],
-            "bail": int(re.sub(r"[^\d]", "", bail.group(1))) if bail else None,
             "text": s,
-        })
+        }
+        art.update(sanction_fields(sanc))
+        if not disp:
+            art["multipart"] = True     # диспозиция придёт из строк «ч. N…»
+        arts.append(art)
     return arts
 
 
