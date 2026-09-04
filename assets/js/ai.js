@@ -96,6 +96,7 @@ const ABBR_DOCS = {
   'усс':['z-usss'], 'usss':['z-usss'],
   'усмс':['z-usms'], 'usms':['z-usms'],
   'прецедент':['s-precedenty'], 'прецеденты':['s-precedenty'], 'толкование':['s-precedenty'], 'толкования':['s-precedenty'],
+  'прецедента':['s-precedenty'], 'толкованию':['s-precedenty'], 'разъяснение':['s-precedenty','prec-nav'],
   'адвокатура':['z-advokat'], 'адвокатский':['z-advokat'],
   'адвокат':['z-advokat','guide-advokat-prava','s-adv-reestr'], 'адвоката':['z-advokat','guide-advokat-prava','s-adv-reestr'],
   'адвокату':['z-advokat','guide-advokat-prava'], 'адвокатом':['z-advokat','guide-advokat-prava'],
@@ -190,6 +191,15 @@ function retrieve(query, k=10, opts={}){
     }
     for (const n of nums) if (c.text.includes(n)) s += 14;
     for (const w of litWords) if (c.text.toLowerCase().includes(w)) s += 6;
+    /* Прецеденты и толкования ВС обязательны к применению и часто решают
+       вопрос вопреки букве статьи, поэтому им нужен отдельный вес: без него
+       короткий акт тонет среди длинных глав кодексов. Прямой запрос номера
+       («прецедент 568», «толкование №22») поднимает нужный акт наверх. */
+    if (c.doc && c.doc.startsWith('prec-')){
+      s *= 1.6;
+      const own = c.doc.slice(5);
+      if (new RegExp('(?:^|\\D)' + own + '(?:\\D|$)').test(query)) s += 60;
+    }
     /* Буст за совпадение с заголовком раздела — отдельно и сильнее, чем
        совпадение с текстом. Слова типа «кодекса», «принципы» настолько
        частотны по всему корпусу, что обычный IDF почти не отличает их
@@ -228,6 +238,9 @@ function retrieve(query, k=10, opts={}){
        документ иногда занимают более общие совпадения раньше нужного. */
     if (opts.forceCore && c.doc === 'uak') cap = 10;
     else if (opts.forceCore && c.doc === 'pk') cap = 4;
+    /* Один акт ВС — один документ, лимит в 2 куска его режет пополам:
+       у длинных решений вывод суда лежит в конце. */
+    else if (c.doc.startsWith('prec-')) cap = 4;
     per[c.doc] = (per[c.doc]||0);
     if (per[c.doc] >= cap) continue;
     per[c.doc]++; out.push(c);

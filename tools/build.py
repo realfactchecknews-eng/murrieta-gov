@@ -448,6 +448,42 @@ def main():
                     })
         print("памятки добавлены в корпус ИИ")
 
+    # Толкования и прецеденты Верховного суда обязательны к применению и имеют
+    # силу закона — они уточняют кодексы и часто решают дело. Кладём каждый акт
+    # отдельным документом (prec-NNN), чтобы поиск мог поднять его целиком,
+    # а утратившие силу не индексируем вовсе: ссылаться на них нельзя.
+    pp = os.path.join(OUT, "precedents.json")
+    if os.path.exists(pp):
+        pdata = json.load(io.open(pp, encoding="utf-8"))
+        npr = 0
+        for r in pdata["items"]:
+            if not r.get("active") or not r.get("text"):
+                continue
+            head = "%s №%s" % (r["kind"], r["num"])
+            title = "%s — %s" % (head, r.get("topic") or r.get("parties") or "")
+            body = ("%s от %s (%s)\nТЕМА: %s\n\n%s"
+                    % (head, r.get("date", "—"), r.get("parties", ""), r.get("topic", ""), r["text"]))
+            for c in make_chunks("prec-" + r["num"], title, "sud", r.get("url", ""),
+                                 [{"heading": head, "paras": [body], "level": 1}]):
+                chunks.append(c)
+                npr += 1
+        # карта «статья → каким актом разъяснена» — короткая, но очень плотная подсказка
+        if pdata.get("nav"):
+            by_doc = {}
+            for n in pdata["nav"]:
+                by_doc.setdefault(n["doc"], []).append(
+                    "%s → %s" % (n["subject"], ", ".join("№" + a for a in n["acts"])))
+            for doc, lines in by_doc.items():
+                chunks.append({
+                    "id": "prec-nav#" + str(abs(hash(doc)) % 10**6),
+                    "doc": "prec-nav", "docTitle": "Навигация: какие статьи разъяснены",
+                    "cat": "sud", "url": pdata.get("source", ""),
+                    "heading": "Разъяснённые статьи — " + doc,
+                    "text": doc + "\n" + "\n".join(lines),
+                })
+                npr += 1
+        print("прецеденты и толкования добавлены в корпус ИИ: %d фрагментов" % npr)
+
     arts = parse_uak(os.path.join(RAW, "Уголовно-административный_кодекс.txt"))
     dk = parse_dk(os.path.join(RAW, "Дорожный_кодекс.txt"))
 

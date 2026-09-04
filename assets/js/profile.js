@@ -103,6 +103,12 @@ function openProfileModal(){
       <label class="fg"><span>Звание / должность <i>(необязательно)</i></span>
         <input class="field-i" id="pfRank" type="text" value="${esc(p.rank||'')}" placeholder="например, детектив, сержант">
       </label>
+      <label class="fg"><span>Имя и фамилия персонажа <i>(подставляется в акты)</i></span>
+        <input class="field-i" id="pfName" type="text" value="${esc(p.name||'')}" placeholder="Marlon DeBloat">
+      </label>
+      <label class="fg"><span>Служебная почта <i>(подставляется в акты)</i></span>
+        <input class="field-i" id="pfMail" type="text" value="${esc(p.mail||'')}" placeholder="name@sa.com">
+      </label>
       <label class="fg"><span>Сервер</span>
         <input class="field-i" type="text" value="Murrieta (Сервер №20)" disabled></label>
     </div>
@@ -113,7 +119,9 @@ function openProfileModal(){
   m.el.querySelector('#pfSave').addEventListener('click', ()=>{
     const faction = m.el.querySelector('#pfFaction').value;
     const rank = m.el.querySelector('#pfRank').value.trim();
-    Profile.set({ faction, rank });
+    const name = m.el.querySelector('#pfName').value.trim();
+    const mail = m.el.querySelector('#pfMail').value.trim();
+    Profile.set({ faction, rank, name, mail });
     toast('Профиль сохранён');
     updateProfileBadge();
     m.close();

@@ -3,7 +3,7 @@
    ============================================================ */
 'use strict';
 
-const DATA = { index:null, articles:null, traffic:null, quickref:null, guides:null, forms:null, docs:{} };
+const DATA = { index:null, articles:null, traffic:null, quickref:null, guides:null, forms:null, precedents:null, docs:{} };
 const $  = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 
@@ -23,6 +23,7 @@ const loadTraffic  = ()=>load('traffic','data/traffic.json');
 const loadQuick    = ()=>load('quickref','data/quickref.json');
 const loadGuides   = ()=>load('guides','data/guides.json');
 const loadForms    = ()=>load('forms','data/forms.json');
+const loadPrec     = ()=>load('precedents','data/precedents.json');
 async function loadDoc(id){
   if (DATA.docs[id]) return DATA.docs[id];
   const r = await fetch('data/docs/'+id+'.json');
@@ -944,6 +945,316 @@ async function viewDoc(id){
 }
 
 /* ============================================================
+   ТОЛКОВАНИЯ И ПРЕЦЕДЕНТЫ ВЕРХОВНОГО СУДА
+   ============================================================ */
+const precState = { q:'', kind:'', onlyActive:true };
+
+async function viewPrecedents(){
+  const d = await loadPrec();
+  const act = d.items.filter(x=>x.active).length;
+  return `
+  <section class="sec view">
+    <div class="sec__head"><div><h2 class="h2">Толкования и прецеденты</h2>
+      <p>Акты Верховного суда обязательны к применению и имеют силу закона — они уточняют кодексы
+         и нередко меняют ответ, который следует из голого текста статьи.
+         Всего ${d.items.length} актов, из них действующих ${act}.</p></div></div>
+
+    <div class="tools">
+      <label class="field">${ico('search',16)}
+        <input id="pq" type="text" placeholder="Номер, стороны, тема… напр. «16.18», «Миранда», «568»" value="${esc(precState.q)}"></label>
+      <div class="chips" id="pKind">
+        <button class="chip is-on" data-v="">Все</button>
+        <button class="chip" data-v="Толкование">Толкования</button>
+        <button class="chip" data-v="Прецедент">Прецеденты</button>
+      </div>
+    </div>
+
+    <div class="prec-nav gb">
+      <b class="gb__h">Какие статьи уже разъяснены</b>
+      <div class="chips">${(d.nav||[]).slice(0,60).map(n=>
+        `<button class="chip chip--sm" data-navq="${esc(n.acts[0])}">${esc(n.subject.slice(0,58))}</button>`).join('')}</div>
+    </div>
+
+    <div class="arts" id="pList"></div>
+  </section>`;
+}
+
+function renderPrec(){
+  const list = $('#pList'); if (!list) return;
+  const d = DATA.precedents; const q = precState.q.trim().toLowerCase();
+  const rows = d.items.filter(x=>{
+    if (precState.onlyActive && !x.active) return false;
+    if (precState.kind && x.kind !== precState.kind) return false;
+    if (!q) return true;
+    return (x.num+' '+x.parties+' '+x.topic+' '+(x.text||'')).toLowerCase().includes(q);
+  });
+  if (!rows.length){ list.innerHTML = `<div class="empty"><b>Ничего не найдено</b>Попробуйте номер акта или ключевое слово.</div>`; return; }
+  list.innerHTML = rows.map(x=>`
+    <article class="art" data-num="${esc(x.num)}">
+      <div class="art__top">
+        <span class="art__num">№${esc(x.num)}</span>
+        <div class="art__body">
+          <div class="art__title">${esc(x.topic || x.parties || 'Без описания')}</div>
+          <div class="art__meta">
+            <span class="tag ${x.kind==='Толкование'?'tag--acc':''}">${esc(x.kind)}</span>
+            ${x.date?`<span class="tag">${esc(x.date)}</span>`:''}
+            ${x.parties?`<span class="tag">${esc(x.parties.slice(0,46))}</span>`:''}
+          </div>
+        </div>
+        <button class="art__fav${window.Favorites?.has('prec:'+x.num)?' is-on':''}" data-fav="prec:${esc(x.num)}" title="В избранное" type="button">★</button>
+        <span class="art__chev">${chev}</span>
+      </div>
+      <div class="art__drop"><div><div class="art__inner">
+        ${x.text?`<div class="prec-text">${linkRefs(esc(x.text))}</div>`
+                :`<div class="art__note">Полный текст в этой базе отсутствует — откройте оригинал на форуме.</div>`}
+        <div class="art__src">
+          ${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener" style="color:var(--acc)">Оригинал на форуме ${arrow}</a>`:''}
+          <button class="btn-mini" data-copy-prec="${esc(x.num)}" type="button" style="margin-left:10px">Скопировать</button>
+        </div>
+      </div></div></div>
+    </article>`).join('');
+}
+
+/* ============================================================
+   КАБИНЕТ ПРОКУРОРА
+   ============================================================ */
+/* Сведено из Закона «О прокуратуре», ПК и Этического кодекса — то, что
+   нужно под рукой в делопроизводстве, без перелистывания трёх актов. */
+const PROK_BLOCKS = [
+  { t:'Сроки, которые горят', type:'table', rows:[
+    ['96 часов','Предельный срок расследования с момента инициации (ПК гл. I ст. 2 ч. 2.1 «а»)'],
+    ['48 часов','Крайний срок публикации первого запроса об истребовании доказательств (там же)'],
+    ['120 часов','Срок хранения фото-, видео- и аудиофиксации. После истечения лицо вправе её не хранить, и 15.6 за непредоставление не устоит — прецедент №337 (ПК гл. IV ст. 2 ч. 1)'],
+    ['1 час','Срок уведомления лица о возложенных актом обязательствах (ПК гл. I ст. 10 ч. 5)'],
+    ['24 часа','Типовой срок исполнения требования прокурора, если иной не установлен (Закон о прокуратуре гл. I ст. 5 ч. 1)'],
+    ['1 час','Предельный срок задержания; течение приостанавливается на допрос, разбирательство с руководством и ожидание адвоката (ПК гл. II ст. 5 п. «г»)'],
+  ]},
+  { t:'Уведомление по ст. 10 ПК — пять обязательных элементов', type:'list', items:[
+    'Номер акта, которым возложена обязанность',
+    'Перечисление обязательств или пунктов акта, подлежащих выполнению',
+    'Конкретные сроки или условия выполнения',
+    'Юридическая ответственность за неисполнение',
+    'Полное имя, фамилия и должность лица, авторизовавшего акт',
+    'Способы: электронная почта, номер телефона, личная встреча (ч. 3). Нарушение порядка уведомления освобождает лицо от ответственности за неисполнение (ч. 2)',
+    'Если контактов нет — час можно превысить, но все предпринятые меры надлежит задокументировать (ч. 6, Толкование №461)',
+  ]},
+  { t:'Задержание государственного служащего', type:'list', items:[
+    'Задержавший обязан вызвать руководство задержанного и прокуратуру (ПК гл. II ст. 4 ч. 1)',
+    'Ответ прокурора не получен за 15 минут — сотрудник вправе отпустить задержанного',
+    'После признания вины прокуратурой ожидание руководства — до 60 минут с первого запроса',
+    'Мера наказания избирается ИСКЛЮЧИТЕЛЬНО прокурором (ч. 2)',
+    'Во время исполнения обязанностей процессуальные действия против сотрудника не допускаются, кроме уголовных статей УАК либо наличия НПА о задержании (гл. II ст. 1 ч. 3)',
+    'При освобождении по требованию прокурора повторное задержание тех же лиц запрещено (ч. 5)',
+  ]},
+  { t:'Основания освобождения задержанного (ПК гл. II ст. 5)', type:'list', items:[
+    '«а» Подозрение в совершении правонарушения не подтвердилось',
+    '«б» За нарушение не предусмотрена мера пресечения в виде заключения под стражу',
+    '«в» Задержание произведено с нарушением порядка (гл. II ст. 1, ст. 2). Не применяется, если задержанным совершено уголовно наказуемое деяние',
+    '«г» Прошло больше часа и не избрана мера пресечения',
+    'Освобождение при наличии основания — обязанность, а не право (Толкование №355). Продолжение удержания образует состав 15.6 (прецедент №568)',
+  ]},
+  { t:'Полномочия прокурора', type:'list', items:[
+    'Требования прокурора подлежат безусловному исполнению; если срок не установлен НПА, прокурор избирает его сам (Закон о прокуратуре гл. I ст. 5 ч. 1)',
+    'Доступ к информации, необходимой для надзора, включая обработку персональных данных (гл. I ст. 3 ч. 2.1)',
+    'Истребование фото-, видео- и аудиофиксации — в рамках расследования ИСКЛЮЧИТЕЛЬНО письменно (ПК гл. IV ст. 3 ч. 1)',
+    'Требовать документы, удостоверяющие личность, при фиксации правонарушения со стороны лица (ст. 24)',
+    'Присутствие на задержании в порядке надзора без вызова (ПК гл. II ст. 3 п. «г»)',
+    'Административный штраф за нарушение Этического кодекса — от 5.000 до 50.000$, назначает работник прокуратуры не ниже прокурора (ЭК ст. 9 ч. 1, ч. 4)',
+    'Неисполнение законного требования прокурора — ст. 16.1.2 УАК, от 2 до 4 лет',
+  ]},
+  { t:'Ограничения помощника прокурора', type:'list', tone:'warn', items:[
+    'Помощники не имеют юрисдикционных полномочий и не проводят надзор за органами власти (гл. II ст. 7 ч. 1)',
+    'Готовят документацию и акты ТОЛЬКО по согласованию с прокурором (ст. 39, 47)',
+    'На территориях государственных организаций — лишь в сопровождении прокурора (ст. 41)',
+    'Генеральная прокуратура вправе делегировать помощнику полномочия по рассмотрению обращений и исков на срок до 120 часов (примечание к ст. 7)',
+  ]},
+  { t:'Номер уголовного дела', type:'table', rows:[
+    ['DJP','Возбуждение по исковому заявлению в Федеральный суд'],
+    ['DJPS','Возбуждение по исковому заявлению в Верховный суд'],
+    ['DJR','Возбуждение по обращению в прокуратуру'],
+    ['DJA','Делопроизводство, инициированное лично: DJA-дата-порядковый номер за день'],
+  ]},
+];
+
+function viewProsecutor(){
+  const block = b => b.type==='table'
+    ? `<div class="gb"><b class="gb__h">${esc(b.t)}</b><table class="qtable qtable--wide">
+        ${b.rows.map(([k,v])=>`<tr><td>${escL(k)}</td><td>${escL(v)}</td></tr>`).join('')}</table></div>`
+    : `<div class="gb gb--${b.tone||'plain'}"><b class="gb__h">${esc(b.t)}</b>
+        <ul class="gb__ul">${b.items.map(i=>`<li>${escL(i)}</li>`).join('')}</ul></div>`;
+  return `
+  <section class="sec view">
+    <div class="sec__head"><div><h2 class="h2">Кабинет прокурора</h2>
+      <p>Полномочия, сроки и порядок оформления — сведено из Закона «О прокуратуре»,
+         Процессуального и Этического кодексов. Отсюда же заводятся уголовные дела.</p></div>
+      <a class="btn btn--main" href="#/cases">Мои дела ${arrow}</a></div>
+    <article class="guide rv">${PROK_BLOCKS.map(block).join('')}</article>
+  </section>`;
+}
+
+/* ============================================================
+   ДЕЛОПРОИЗВОДСТВО: УГОЛОВНЫЕ ДЕЛА
+   ============================================================ */
+const STATUS = { in_work:'В работе', court:'Передано в суд', closed:'Прекращено' };
+
+function viewCases(){
+  const list = window.Cases.all().sort((a,b)=>b.created-a.created);
+  return `
+  <section class="sec view">
+    <div class="sec__head"><div><h2 class="h2">Мои дела</h2>
+      <p>Каждое дело хранит свои постановления, требования и уведомления — с собственной
+         сквозной нумерацией, чтобы акты разных дел не путались между собой.
+         Данные лежат только в этом браузере.</p></div>
+      <button class="btn btn--main" id="caseNew" type="button">Завести дело</button></div>
+
+    ${list.length ? `<div class="cases">${list.map(c=>`
+      <a class="card card--link pcase" href="#/case/${c.id}">
+        <div class="pcase__h">
+          <b>${esc(window.Cases.caseNo(c))}</b>
+          <span class="tag ${c.status==='court'?'tag--acc':''}">${esc(STATUS[c.status]||c.status)}</span>
+        </div>
+        <p>${esc(c.title || 'Без названия')}</p>
+        <div class="pcase__m">
+          ${c.otvetchik?`<span>Ответчик: ${esc(c.otvetchik)}</span>`:''}
+          ${c.articles?`<span>Статьи: ${esc(c.articles)}</span>`:''}
+          <span>Документов: ${(c.docs||[]).length}</span>
+        </div>
+      </a>`).join('')}</div>`
+    : `<div class="empty"><b>Дел пока нет</b>Заведите первое — и все акты по нему будут собираться в одном месте.</div>`}
+  </section>`;
+}
+
+async function viewCase(id){
+  const c = window.Cases.get(id);
+  if (!c) return `<section class="sec view"><div class="empty"><b>Дело не найдено</b><a href="#/cases" style="color:var(--acc)">Ко всем делам</a></div></section>`;
+  const docs = (c.docs||[]).slice().sort((a,b)=>a.created-b.created);
+  return `
+  <section class="sec view">
+    <div class="crumb"><a href="#/cases">Мои дела</a> / ${esc(window.Cases.caseNo(c))}</div>
+
+    <div class="sec__head" style="margin-bottom:16px">
+      <div><h2 class="h2">${esc(window.Cases.caseNo(c))}</h2>
+        <p>${esc(c.title||'Без названия')}</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn--ghost" id="caseEdit" type="button">Изменить</button>
+        <button class="btn btn--ghost" id="caseDel" type="button">Удалить</button>
+      </div>
+    </div>
+
+    <div class="fgrid" style="margin-bottom:22px">
+      ${[['Истец',c.istec],['Ответчик',c.otvetchik],['Статьи',c.articles],
+         ['Статус',STATUS[c.status]||c.status],['Следующий акт','№'+c.nextSeq]]
+        .filter(([,v])=>v).map(([k,v])=>`<div class="fcard"><div class="fcard__h"><b>${k}</b></div><p>${escL(String(v))}</p></div>`).join('')}
+    </div>
+
+    ${c.fabula?`<div class="gb gb--note"><b class="gb__h">Фабула</b><p>${escL(c.fabula)}</p></div>`:''}
+
+    <div class="sec__head" style="margin:26px 0 12px">
+      <div><h3 class="h3">Документы по делу (${docs.length})</h3></div>
+      <button class="btn btn--main" id="docNew" type="button" style="padding:9px 16px;font-size:13px">Добавить документ</button>
+    </div>
+
+    ${docs.length ? `<div class="arts">${docs.map(dc=>`
+      <article class="art" data-doc="${dc.docId}">
+        <div class="art__top">
+          <span class="art__num">${dc.seq?'№'+esc(dc.seq):'—'}</span>
+          <div class="art__body">
+            <div class="art__title">${esc(kindName(dc.kind))}${dc.note?' — '+esc(dc.note):''}</div>
+            <div class="art__meta"><span class="tag">${esc(dc.date||'')}</span></div>
+          </div>
+          <span class="art__chev">${chev}</span>
+        </div>
+        <div class="art__drop"><div><div class="art__inner">
+          <textarea class="field-i doc-body" data-doc="${dc.docId}" rows="14">${esc(dc.body||'')}</textarea>
+          <div class="fg-ai__row">
+            <button class="btn-mini" data-copy-doc="${dc.docId}" type="button">Скопировать</button>
+            <button class="btn-mini" data-dl-doc="${dc.docId}" type="button">Скачать .txt</button>
+            <button class="btn-mini" data-del-doc="${dc.docId}" type="button">Удалить</button>
+            <span class="fg-ai__hint">Правки сохраняются автоматически</span>
+          </div>
+        </div></div></div>
+      </article>`).join('')}</div>`
+    : `<div class="empty"><b>Документов нет</b>Добавьте первый — данные дела подставятся в шаблон автоматически.</div>`}
+  </section>`;
+}
+
+function caseFormHtml(c){
+  c = c || {};
+  return `<div class="fg-fields">
+    <label class="fg"><span>Тип дела</span>
+      <select class="field-i" id="cPrefix">${window.CASE_PREFIX.map(p=>
+        `<option value="${p.id}"${c.prefix===p.id?' selected':''}>${esc(p.name)}</option>`).join('')}</select></label>
+    <label class="fg"><span>Номер дела <i>(равен номеру иска или обращения)</i></span>
+      <input class="field-i" id="cNum" type="text" value="${esc(c.num||'')}" placeholder="221"></label>
+    <label class="fg"><span>Короткое название</span>
+      <input class="field-i" id="cTitle" type="text" value="${esc(c.title||'')}" placeholder="Вмешательство в процессуальные действия"></label>
+    <label class="fg"><span>Истец</span>
+      <input class="field-i" id="cIstec" type="text" value="${esc(c.istec||'')}" placeholder="Имя Фамилия (н.п. 000000)"></label>
+    <label class="fg"><span>Ответчик</span>
+      <input class="field-i" id="cOtv" type="text" value="${esc(c.otvetchik||'')}" placeholder="Имя Фамилия (н.п. 000000)"></label>
+    <label class="fg"><span>Статьи</span>
+      <input class="field-i" id="cArt" type="text" value="${esc(c.articles||'')}" placeholder="16.18"></label>
+    <label class="fg"><span>Номер следующего постановления</span>
+      <input class="field-i" id="cSeq" type="text" value="${esc(String(c.nextSeq||1))}" placeholder="177"></label>
+    <label class="fg"><span>Статус</span>
+      <select class="field-i" id="cStatus">${Object.entries(STATUS).map(([k,v])=>
+        `<option value="${k}"${c.status===k?' selected':''}>${v}</option>`).join('')}</select></label>
+    <label class="fg"><span>Фабула</span>
+      <textarea class="field-i" id="cFab" rows="5" placeholder="Обстоятельства, изложенные в заявлении">${esc(c.fabula||'')}</textarea></label>
+  </div>
+  <div class="fg-ai__row" style="margin-top:12px">
+    <button class="btn btn--main" id="cSave" type="button" style="padding:9px 18px;font-size:13px">Сохранить</button>
+  </div>`;
+}
+
+function openCaseModal(id){
+  const c = id ? window.Cases.get(id) : null;
+  const m = openModal(c ? 'Изменить дело' : 'Новое дело', caseFormHtml(c));
+  m.el.querySelector('#cSave').addEventListener('click', ()=>{
+    const g = s => m.el.querySelector(s).value.trim();
+    const data = {
+      prefix:g('#cPrefix'), num:g('#cNum'), title:g('#cTitle'),
+      istec:g('#cIstec'), otvetchik:g('#cOtv'), articles:g('#cArt'),
+      status:g('#cStatus'), fabula:g('#cFab'),
+      nextSeq: Math.max(1, parseInt(g('#cSeq'),10) || 1),
+    };
+    if (c){ window.Cases.update(c.id, data); toast('Дело обновлено'); m.close(); router(); }
+    else { const nc = window.Cases.add(data); toast('Дело заведено'); m.close(); location.hash = '#/case/'+nc.id; }
+  });
+}
+
+function openDocModal(caseId){
+  const html = `<div class="fg-fields">
+      <label class="fg"><span>Вид документа</span>
+        <select class="field-i" id="dKind">${window.DOC_KINDS.map(k=>
+          `<option value="${k.id}">${esc(k.name)}</option>`).join('')}</select></label>
+      <label class="fg"><span>Пометка <i>(необязательно)</i></span>
+        <input class="field-i" id="dNote" type="text" placeholder="кому адресован, о чём"></label>
+    </div>
+    <p class="modal__hint" style="margin-top:12px">Текст соберётся из шаблона: подставятся номер дела,
+       стороны, статьи и ваши данные из профиля. Дальше правится вручную.</p>
+    <div class="fg-ai__row"><button class="btn btn--main" id="dAdd" type="button" style="padding:9px 18px;font-size:13px">Создать</button></div>`;
+  const m = openModal('Новый документ', html);
+  m.el.querySelector('#dAdd').addEventListener('click', ()=>{
+    const kind = m.el.querySelector('#dKind').value;
+    const note = m.el.querySelector('#dNote').value.trim();
+    const c = window.Cases.get(caseId);
+    const seq = window.DOC_KINDS.find(k=>k.id===kind)?.seq ? String(c.nextSeq) : '';
+    window.Cases.addDoc(caseId, { kind, note, body: window.docTemplate(kind, c, seq) });
+    toast('Документ добавлен'); m.close(); router();
+  });
+}
+
+function dlText(name, text){
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.replace(/[^\wа-яё \-.]+/gi,'').trim().slice(0,60) + '.txt';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ============================================================
    РОУТЕР
    ============================================================ */
 const ROUTES = [
@@ -955,6 +1266,10 @@ const ROUTES = [
   [/^\/forms$/,             'forms', viewForms],
   [/^\/assess$/,            'assess',viewAssess],
   [/^\/favorites$/,         'favorites',viewFavorites],
+  [/^\/precedents$/,        'precedents',viewPrecedents],
+  [/^\/prosecutor$/,        'prosecutor',viewProsecutor],
+  [/^\/cases$/,             'cases', viewCases],
+  [/^\/case\/([\w-]+)$/,    'cases', (p,m)=>viewCase(m[1])],
   [/^\/docs$/,              'docs',  viewDocs],
   [/^\/doc\/([\w-]+)$/,     'docs',  (p,m)=>viewDoc(m[1])],
   [/^\/ai$/,                'ai',    ()=>window.AI.view()],
@@ -1019,6 +1334,62 @@ function bindView(path){
     bindForms(DATA.forms, form);
   }
   if (path === '/assess') bindAssess();
+
+  if (path === '/precedents'){
+    renderPrec(); rebindArts();
+    const inp = $('#pq'); let t;
+    inp.addEventListener('input',()=>{ clearTimeout(t); t=setTimeout(()=>{
+      precState.q = inp.value; renderPrec(); rebindArts(); },140); });
+    $('#pKind').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b)return;
+      precState.kind=b.dataset.v; $$('#pKind .chip').forEach(x=>x.classList.toggle('is-on',x===b));
+      renderPrec(); rebindArts(); });
+    $$('[data-navq]').forEach(b=>b.addEventListener('click',()=>{
+      precState.q = b.dataset.navq; inp.value = b.dataset.navq; renderPrec(); rebindArts();
+      $('#pList').scrollIntoView({behavior:'smooth', block:'start'}); }));
+    $$('[data-copy-prec]').forEach(b=>b.addEventListener('click', async e=>{
+      e.stopPropagation();
+      const r = DATA.precedents.items.find(x=>x.num===b.dataset.copyPrec);
+      try{ await navigator.clipboard.writeText(`${r.kind} №${r.num}${r.date?' от '+r.date:''}\n${r.topic}\n\n${r.text||''}\n\n${r.url||''}`);
+        toast('Скопировано'); }catch{ toast('Не удалось скопировать'); }
+    }));
+  }
+
+  if (path === '/cases'){
+    $('#caseNew')?.addEventListener('click', ()=>openCaseModal());
+  }
+
+  if (path.startsWith('/case/')){
+    const cid = path.split('/')[2];
+    $('#caseEdit')?.addEventListener('click', ()=>openCaseModal(cid));
+    $('#caseDel')?.addEventListener('click', ()=>{
+      if (!confirm('Удалить дело со всеми документами? Отменить будет нельзя.')) return;
+      window.Cases.remove(cid); toast('Дело удалено'); location.hash = '#/cases';
+    });
+    $('#docNew')?.addEventListener('click', ()=>openDocModal(cid));
+    /* правки текста сохраняем на лету — иначе легко потерять работу,
+       переключившись на другой раздел */
+    $$('.doc-body').forEach(ta=>{
+      let t; ta.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(()=>{
+        window.Cases.updateDoc(cid, ta.dataset.doc, { body: ta.value }); },400); });
+      ta.addEventListener('click', e=>e.stopPropagation());
+    });
+    const docOf = id => (window.Cases.get(cid).docs||[]).find(d=>d.docId===id);
+    $$('[data-copy-doc]').forEach(b=>b.addEventListener('click', async e=>{
+      e.stopPropagation();
+      try{ await navigator.clipboard.writeText(docOf(b.dataset.copyDoc).body||''); toast('Скопировано'); }
+      catch{ toast('Не удалось скопировать'); }
+    }));
+    $$('[data-dl-doc]').forEach(b=>b.addEventListener('click', e=>{
+      e.stopPropagation();
+      const d = docOf(b.dataset.dlDoc);
+      dlText(`${window.Cases.caseNo(window.Cases.get(cid))} ${d.seq?'№'+d.seq+' ':''}${kindName(d.kind)}`, d.body||'');
+    }));
+    $$('[data-del-doc]').forEach(b=>b.addEventListener('click', e=>{
+      e.stopPropagation();
+      if (!confirm('Удалить документ?')) return;
+      window.Cases.removeDoc(cid, b.dataset.delDoc); toast('Документ удалён'); router();
+    }));
+  }
   if (path === '/favorites') bindFavorites();
 }
 function rebindArts(){
