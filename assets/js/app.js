@@ -1149,6 +1149,19 @@ async function viewCase(id){
 
     ${c.fabula?`<div class="gb gb--note"><b class="gb__h">Фабула</b><p>${escL(c.fabula)}</p></div>`:''}
 
+    <div class="fg-ai" style="margin-top:22px">
+      <div class="fg-ai__row" style="margin-top:0">
+        <button class="btn btn--main" id="caseAi" type="button" style="padding:9px 16px;font-size:13px">Разобрать дело через ИИ</button>
+        <span class="fg-ai__hint" id="caseAiHint">Проверит квалификацию по фабуле, поднимет применимые толкования и прецеденты, подскажет, что истребовать.</span>
+      </div>
+      <div class="case-ai" id="caseAiOut" hidden>
+        <div class="asg-card asg-card--verdict"><b>Квалификация</b><div id="caiQual"></div></div>
+        <div class="asg-card asg-card--acts"><b>Акты Верховного суда</b><div id="caiActs"></div></div>
+        <div class="asg-card"><b>Чего не хватает</b><div id="caiMissing"></div></div>
+        <div class="asg-card asg-card--risk"><b>Риски</b><div id="caiRisks"></div></div>
+      </div>
+    </div>
+
     <div class="sec__head" style="margin:26px 0 12px">
       <div><h3 class="h3">Документы по делу (${docs.length})</h3></div>
       <button class="btn btn--main" id="docNew" type="button" style="padding:9px 16px;font-size:13px">Добавить документ</button>
@@ -1366,6 +1379,42 @@ function bindView(path){
       window.Cases.remove(cid); toast('Дело удалено'); location.hash = '#/cases';
     });
     $('#docNew')?.addEventListener('click', ()=>openDocModal(cid));
+
+    $('#caseAi')?.addEventListener('click', async ()=>{
+      const c = window.Cases.get(cid);
+      const b = $('#caseAi'), hint = $('#caseAiHint'), out = $('#caseAiOut');
+      if (!c.fabula){ toast('Сначала заполните фабулу — по ней и идёт разбор'); return; }
+      b.disabled = true; b.textContent = 'Разбираю…';
+      hint.textContent = 'Поднимаю статьи и акты Верховного суда — обычно 15–30 секунд.';
+      /* Карточку отдаём целиком: модели нужны и стороны, и предварительная
+         квалификация, чтобы сказать, что она не подходит. */
+      const card = [
+        `Номер дела: ${window.Cases.caseNo(c)}`,
+        c.title ? `Название: ${c.title}` : '',
+        c.istec ? `Истец: ${c.istec}` : '',
+        c.otvetchik ? `Ответчик: ${c.otvetchik}` : '',
+        c.articles ? `Предварительная квалификация: ст. ${c.articles} УАК` : '',
+        '', 'Фабула:', c.fabula,
+      ].filter(Boolean).join('\n');
+      try{
+        const r = await window.AI.qualifyCase(card);
+        const warns = window.AI.subjectWarnings(r.qual || '');
+        $('#caiQual').innerHTML = md(r.qual || '—') + (warns.length ? `
+          <div class="subj-warn"><b>Проверьте субъект состава</b>
+            <ul>${warns.map(w=>`<li><b>${esc(w.num)}</b> — ${esc(w.note)}</li>`).join('')}</ul>
+            <span>Статьи с ограниченным кругом субъектов. Убедитесь, что фигурант под него подпадает — модель здесь ошибается чаще всего.</span>
+          </div>` : '');
+        $('#caiActs').innerHTML    = md(r.acts || '—');
+        $('#caiMissing').innerHTML = md(r.missing || '—');
+        $('#caiRisks').innerHTML   = md(r.risks || '—');
+        out.hidden = false;
+        hint.textContent = 'Это разбор ИИ, а не решение прокурора — проверяйте нормы по первоисточнику.';
+      }catch(err){
+        hint.textContent = 'Ошибка: ' + err.message;
+      }finally{
+        b.disabled = false; b.textContent = 'Разобрать дело через ИИ';
+      }
+    });
     /* правки текста сохраняем на лету — иначе легко потерять работу,
        переключившись на другой раздел */
     $$('.doc-body').forEach(ta=>{
