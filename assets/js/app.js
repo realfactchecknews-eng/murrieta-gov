@@ -1286,6 +1286,7 @@ const ROUTES = [
   [/^\/docs$/,              'docs',  viewDocs],
   [/^\/doc\/([\w-]+)$/,     'docs',  (p,m)=>viewDoc(m[1])],
   [/^\/ai$/,                'ai',    ()=>window.AI.view()],
+  [/^\/thread$/,            'thread',()=>window.Thread.view()],
 ];
 
 async function router(){
@@ -1315,6 +1316,7 @@ async function router(){
 }
 
 function bindView(path){
+  if (path === '/thread') window.Thread.bind();
   /* аккордеон статей */
   $$('.art__top').forEach(t=>t.addEventListener('click',()=>t.closest('.art').classList.toggle('is-open')));
 
