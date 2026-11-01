@@ -10,7 +10,7 @@ const THREAD_KEY = 'murrieta_thread';
 const H = 3600e3;
 const MONTHS = { января:1, февраля:2, марта:3, апреля:4, мая:5, июня:6, июля:7, августа:8, сентября:9, октября:10, ноября:11, декабря:12 };
 
-const BOOKMARKLET = "javascript:(async()=>{const P=[...document.querySelectorAll('[id^=\"js-post-\"]')].map(e=>{const t=e.querySelector('time'),b=e.querySelector('.message-body');return{id:e.id.replace('js-post-',''),time:t?t.getAttribute('datetime'):'',author:e.getAttribute('data-author')||'',text:(b?b.innerText:'').trim().slice(0,12000)}});const j=JSON.stringify({url:location.href.split('#')[0],title:document.title,posts:P});try{await navigator.clipboard.writeText(j);alert('Скопировано постов: '+P.length+'. Вставьте на zakonka.online → Ветка')}catch(x){prompt('Скопируйте (Ctrl+C):',j)}})()";
+const BOOKMARKLET = "javascript:(async()=>{const w=window.open('','_blank');const P=[...document.querySelectorAll('[id^=\"js-post-\"]')].map(e=>{const t=e.querySelector('time'),b=e.querySelector('.message-body');return{id:e.id.replace('js-post-',''),time:t?t.getAttribute('datetime'):'',author:e.getAttribute('data-author')||'',text:(b?b.innerText:'').trim().slice(0,12000)}});const j=JSON.stringify({url:location.href.split('#')[0],title:document.title,posts:P});try{const r=await new Response(new Blob([j]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer();let s='';for(const x of new Uint8Array(r))s+=String.fromCharCode(x);w.location='https://zakonka.online/#/thread?d='+btoa(s).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'')}catch(x){try{await navigator.clipboard.writeText(j);alert('Скопировано постов: '+P.length+'. Вставьте на zakonka.online → Сроки')}catch(y){prompt('Скопируйте (Ctrl+C):',j)}if(w)w.close()}})()";
 
 const mskDate = (y, m, d, hh = 0, mm = 0) => new Date(`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00+03:00`);
 
@@ -102,6 +102,16 @@ function left(due, now = new Date()) {
   return ms >= 0 ? { late: false, text: 'осталось ' + s, hot: ms < 6 * H, warm: ms < 24 * H } : { late: true, text: 'прошло ' + s };
 }
 
+/* ---------- загрузка из адреса (d=gzip+base64url) ---------- */
+async function decodePayload(d) {
+  try {
+    const bin = atob(String(d).replace(/-/g, '+').replace(/_/g, '/'));
+    const u = Uint8Array.from(bin, c => c.charCodeAt(0));
+    const txt = await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    return JSON.parse(txt);
+  } catch { return null; }
+}
+
 /* ---------- проверка текста перед подачей ---------- */
 const AGENCY = /^(LSPD|LSSD|FIB|USSS|SASPA|SAMS|EMS|GOV|NG|ARMY|LSFD|SAPR|SANG)\b/;
 function lev(a, b) {
@@ -155,7 +165,7 @@ function check(text, knownArticles = null, now = new Date()) {
   return r;
 }
 
-if (typeof module !== 'undefined') module.exports = { classify, analyze, check, parseHearing, parseEvent, lev };
+if (typeof module !== 'undefined') module.exports = { classify, analyze, check, parseHearing, parseEvent, lev, decodePayload };
 
 /* ---------- интерфейс ---------- */
 if (typeof window !== 'undefined') {
@@ -194,10 +204,10 @@ if (typeof window !== 'undefined') {
       return `
       <section class="sec view">
         <div class="sec__head"><div><h2 class="h2">Ветка и сроки</h2>
-          <p>Форум закрыт для гостей, поэтому сайт сам его прочитать не может. Перетащите закладку на панель, откройте свою ветку (залогиненным), нажмите закладку и вставьте результат сюда. Логины никуда не уходят: всё считается в вашем браузере.</p></div></div>
+          <p>Форум закрыт для гостей, поэтому сайт сам его прочитать не может. Добавьте закладку (правый клик по кнопке → «Добавить ссылку в закладки», или перетащите на панель), откройте свою ветку на форуме залогиненным и нажмите закладку: сайт откроется сам с загруженной веткой. Логины никуда не уходят: всё считается в вашем браузере.</p></div></div>
 
         <p><a class="btn" id="thBm" href="${esc(BOOKMARKLET)}" draggable="true">📋 Забрать ветку</a>
-           <span style="opacity:.7">← перетащите на панель закладок. Ветка из нескольких страниц: нажмите на каждой странице и вставьте всё подряд, дубли уберутся.</span></p>
+           <span style="opacity:.7">← добавьте в закладки. Ветка из нескольких страниц: нажимайте на каждой странице, посты накапливаются, дубли убираются. Если сайт не открылся сам, данные окажутся в буфере: вставьте их ниже.</span></p>
         <textarea class="field-i" id="thIn" rows="3" placeholder="Вставьте сюда результат закладки (JSON) …"></textarea>
         <p><button class="btn" id="thGo">Разобрать</button> <button class="btn" id="thClr">Очистить</button></p>
         <div id="thOut"></div>
@@ -211,14 +221,23 @@ if (typeof window !== 'undefined') {
       </section>`;
     },
     bind() {
-      render();
-      document.getElementById('thGo').onclick = () => {
-        const raw = document.getElementById('thIn').value.trim(); if (!raw) return;
-        let j; try { j = JSON.parse(raw); } catch { alert('Это не похоже на результат закладки (JSON).'); return; }
+      const merge = j => {
         const cur = load(), same = cur && cur.url === j.url;
         const map = new Map((same ? cur.posts : []).map(p => [p.id, p]));
         (j.posts || []).forEach(p => map.set(p.id, p));
         save({ url: j.url, title: j.title, posts: [...map.values()] });
+      };
+      render();
+      const dm = location.hash.match(/[?&]d=([^&]+)/);
+      if (dm) decodePayload(dm[1]).then(j => {
+        history.replaceState(null, '', '#/thread');
+        if (j && j.posts) { merge(j); render(); }
+        else alert('Не удалось прочитать данные из закладки.');
+      });
+      document.getElementById('thGo').onclick = () => {
+        const raw = document.getElementById('thIn').value.trim(); if (!raw) return;
+        let j; try { j = JSON.parse(raw); } catch { alert('Это не похоже на результат закладки (JSON).'); return; }
+        merge(j);
         document.getElementById('thIn').value = ''; render();
       };
       document.getElementById('thClr').onclick = () => { localStorage.removeItem(THREAD_KEY); render(); };

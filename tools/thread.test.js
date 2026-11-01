@@ -30,4 +30,7 @@ assert.strictEqual(+a.due.find(d => /Апелляция/.test(d.title)).due, +ne
 const bad = T.check('ИСКОВОЕ ЗАЯВЛЕНИЕ\nMarlon Corvov и Marlon Korvov [ССЫЛКА]\nДата подачи: 10.10.2026', new Set(['17.1']), new Date('2026-10-10T12:00:00+03:00')).map(x => x.m).join('|');
 assert(/Незаполненная вставка/.test(bad) && /Разные написания/.test(bad) && /ПРОСЬБА К/.test(bad));
 assert(!/\[LSPD/.test(T.check('Знак [LSPD | CPD | 1 | M.P]').map(x => x.m).join('')), 'жетон не вставка');
-console.log('thread.test OK');
+const zlib = require('zlib');
+const pay = { url: 'u', title: 't', posts: [P('9', '2026-10-10T12:00:00+0300', 'Привет ✓')] };
+const d = zlib.gzipSync(Buffer.from(JSON.stringify(pay))).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+T.decodePayload(d).then(r => { assert.strictEqual(r.posts[0].text, 'Привет ✓'); console.log('thread.test OK'); });
